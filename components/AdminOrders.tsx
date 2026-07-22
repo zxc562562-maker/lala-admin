@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import { updateFulfillment, assignOrder, openDispute, resolveDispute, setItemIssue, type OrderRow, type Fulfillment } from '@lala/shared/lib/staff-actions';
@@ -8,13 +8,13 @@ import { FULFILLMENT_LABEL as LABEL } from '@lala/shared/lib/fulfillment-label';
 import { getDeliverySlotLabel } from '@lala/shared/lib/delivery';
 import ReturnTrackingAdminForm from './ReturnTrackingAdminForm';
 import PackagingPhotoAdminForm from './PackagingPhotoAdminForm';
+import AdminDatePicker from './AdminDatePicker';
 
 const won = (n: number) => n.toLocaleString('ko-KR') + '원';
 const STATUSES: Fulfillment[] = [
   'ORDERED', 'PRE_INSPECTING', 'READY', 'SHIPPED', 'DELIVERED', 'RETURN_REQUESTED', 'RETURN_INSPECTING', 'REFUNDED',
   'PRE_INSPECT_ISSUE', 'MISDELIVERED', 'RETURN_ISSUE',
 ];
-const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
 function todayISO(): string {
   const d = new Date();
@@ -24,80 +24,6 @@ function todayISO(): string {
 function rentalDays(checkout: string, ret: string): number {
   const ms = new Date(`${ret}T00:00:00`).getTime() - new Date(`${checkout}T00:00:00`).getTime();
   return Math.max(1, Math.round(ms / 86400000));
-}
-
-/** 일자별 조회 — 데스크톱용 날짜 스크롤러. 휠/방향키로 하루씩 이동, 숫자 4자리(MMDD) 입력, 오른쪽 달력 아이콘으로 임의 날짜 이동. */
-function DayScroller({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const dateInputRef = useRef<HTMLInputElement>(null);
-  const pillRef = useRef<HTMLDivElement>(null);
-  const digitBuffer = useRef('');
-  const digitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function shiftDay(delta: number) {
-    const d = new Date(`${value}T00:00:00`);
-    d.setDate(d.getDate() + delta);
-    onChange(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
-  }
-
-  function commitDigitBuffer() {
-    if (digitBuffer.current.length === 4) {
-      const mm = digitBuffer.current.slice(0, 2);
-      const dd = digitBuffer.current.slice(2, 4);
-      const year = value.slice(0, 4);
-      const candidate = `${year}-${mm}-${dd}`;
-      if (!Number.isNaN(new Date(candidate).getTime())) onChange(candidate);
-    }
-    digitBuffer.current = '';
-  }
-
-  // React의 onWheel은 패시브 리스너라 preventDefault가 안 먹어서(뒤 페이지가 같이 스크롤됨),
-  // 네이티브 리스너를 non-passive로 직접 붙인다.
-  useEffect(() => {
-    const el = pillRef.current;
-    if (!el) return;
-    const handler = (e: WheelEvent) => {
-      e.preventDefault();
-      shiftDay(e.deltaY > 0 ? 1 : -1);
-    };
-    el.addEventListener('wheel', handler, { passive: false });
-    return () => el.removeEventListener('wheel', handler);
-  }, [value]);
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { e.preventDefault(); shiftDay(1); return; }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); shiftDay(-1); return; }
-    if (/^[0-9]$/.test(e.key)) {
-      e.preventDefault();
-      digitBuffer.current = (digitBuffer.current + e.key).slice(-4);
-      if (digitTimer.current) clearTimeout(digitTimer.current);
-      if (digitBuffer.current.length === 4) {
-        commitDigitBuffer();
-      } else {
-        digitTimer.current = setTimeout(() => { digitBuffer.current = ''; }, 1200);
-      }
-    }
-  }
-
-  const d = new Date(`${value}T00:00:00`);
-  const label = `${d.getMonth() + 1}월 ${d.getDate()}일 (${DAY_NAMES[d.getDay()]})`;
-
-  return (
-    <div className="day-scroller">
-      <div ref={pillRef} className="day-scroller-pill" tabIndex={0} onKeyDown={handleKeyDown} title="휠로 스크롤하거나 방향키, 숫자 4자리(월일)로 이동">
-        {label}
-      </div>
-      <button type="button" className="day-scroller-cal" onClick={() => dateInputRef.current?.showPicker?.()} title="달력에서 선택">
-        📅
-      </button>
-      <input
-        ref={dateInputRef}
-        type="date"
-        value={value}
-        onChange={(e) => e.target.value && onChange(e.target.value)}
-        className="day-scroller-native"
-      />
-    </div>
-  );
 }
 
 export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; staff: { id: string; name: string }[] }) {
@@ -170,18 +96,16 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
       </div>
 
       <div className="admin-toolbar">
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
+        <div className="date-range-row">
           일자별 조회
-          <DayScroller value={dateFilter} onChange={(v) => { setDateFilter(v); setRangeStart(''); setRangeEnd(''); setShowAll(false); }} />
-        </label>
+          <AdminDatePicker value={dateFilter} onChange={(v) => { setDateFilter(v); setRangeStart(''); setRangeEnd(''); setShowAll(false); }} />
+        </div>
 
         <div className="date-range-row">
           기간별 조회
-          <input type="date" className="admin-search" style={{ minWidth: 0, padding: '6px 8px' }}
-            value={rangeStart} onChange={(e) => { setRangeStart(e.target.value); setShowAll(false); }} />
+          <AdminDatePicker value={rangeStart} placeholder="시작일" onChange={(v) => { setRangeStart(v); setShowAll(false); }} />
           ~
-          <input type="date" className="admin-search" style={{ minWidth: 0, padding: '6px 8px' }}
-            value={rangeEnd} onChange={(e) => { setRangeEnd(e.target.value); setShowAll(false); }} />
+          <AdminDatePicker value={rangeEnd} placeholder="종료일" onChange={(v) => { setRangeEnd(v); setShowAll(false); }} />
         </div>
 
         {(rangeActive || showAll) && (
