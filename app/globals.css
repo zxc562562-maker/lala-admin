@@ -347,7 +347,7 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .live-dot.on{background:var(--sage)}
 .rt-dot{font-size:9px;color:var(--espresso)}
 .staff-empty{color:var(--espresso);text-align:center;padding:40px 0}
-.order-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px;align-items:start}
+.order-list{display:flex;flex-direction:column;gap:14px}
 .order-card{border:1px solid var(--line);border-radius:6px;background:#fff;padding:16px 18px;box-shadow:0 1px 2px rgba(28,22,17,.04)}
 .order-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .order-num{font-weight:400;opacity:.5;margin-right:2px}
@@ -355,9 +355,22 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .order-amt{font-size:14px;font-weight:600;color:var(--espresso);white-space:nowrap}
 .order-status{font-size:12px;color:var(--espresso)}
 .order-sub{font-size:12px;color:var(--espresso);opacity:.65;margin-top:4px}
-.order-ctrls{display:flex;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);flex-wrap:wrap}
-.order-ctrls label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--espresso);opacity:.7}
+.order-sub-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.order-products{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.order-ctrls{display:flex;flex-direction:column;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.order-ctrl-row{display:flex;align-items:center;gap:10px}
+.order-ctrl-row>span:first-child{font-size:11px;color:var(--espresso);opacity:.7;width:52px;flex-shrink:0}
 .order-ctrls select{font-family:var(--sans);font-size:12.5px;padding:7px 8px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--espresso)}
+
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;background:var(--paper);border:1px solid var(--line);font-size:11px;color:var(--espresso);white-space:nowrap}
+
+.day-scroller{display:flex;align-items:center;gap:6px;position:relative}
+.day-scroller-pill{padding:7px 16px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;color:var(--espresso);cursor:ns-resize;user-select:none;min-width:140px;text-align:center;background:#fff;transition:border-color .15s}
+.day-scroller-pill:focus{outline:none;border-color:var(--espresso)}
+.day-scroller-cal{border:1px solid var(--line);border-radius:999px;background:#fff;width:33px;height:33px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--espresso)}
+.day-scroller-cal:hover{border-color:var(--espresso)}
+.day-scroller-native{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;right:0}
+.date-range-row{display:flex;align-items:center;gap:6px;font-size:12.5px}
 
 /* 상품/재고/고객/직원/대시보드 — 툴바 + 버튼 + 데이터 테이블 + 등록·수정 드로어 */
 .admin-topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px;flex-wrap:wrap}
