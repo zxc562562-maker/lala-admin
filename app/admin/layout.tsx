@@ -6,9 +6,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const serviceUrl = process.env.NEXT_PUBLIC_SERVICE_URL!;
-  const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL!;
   const me = await getAccess();
-  if (!me) redirect(`${serviceUrl}/login?next=${encodeURIComponent(`${adminUrl}/admin`)}`);
+  if (!me) redirect(`/login?next=${encodeURIComponent('/admin')}`);
   if (!me.isApprover) redirect(serviceUrl);
   return (
     <>
