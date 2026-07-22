@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import { updateFulfillment, assignOrder, openDispute, resolveDispute, setItemIssue, type OrderRow, type Fulfillment } from '@lala/shared/lib/staff-actions';
 import { FULFILLMENT_LABEL as LABEL } from '@lala/shared/lib/fulfillment-label';
-import { getDeliverySlotLabel } from '@lala/shared/lib/delivery';
+import { getDeliverySlotLabel, DELIVERY_METHODS } from '@lala/shared/lib/delivery';
 import ReturnTrackingAdminForm from './ReturnTrackingAdminForm';
 import PackagingPhotoAdminForm from './PackagingPhotoAdminForm';
 import AdminDatePicker from './AdminDatePicker';
@@ -24,6 +24,11 @@ function todayISO(): string {
 function rentalDays(checkout: string, ret: string): number {
   const ms = new Date(`${ret}T00:00:00`).getTime() - new Date(`${checkout}T00:00:00`).getTime();
   return Math.max(1, Math.round(ms / 86400000));
+}
+
+/** 미지정(null)이면 알약 자체를 안 보여줄 거라 null 리턴. */
+function deliveryMethodLabel(id: string | null): string | null {
+  return DELIVERY_METHODS.find((m) => m.id === id)?.label ?? null;
 }
 
 export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; staff: { id: string; name: string }[] }) {
@@ -125,23 +130,32 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
           <div className="order-card" key={o.id}>
             <div className="order-head">
               <span className="order-cust">
-                <span className="order-num">#{orderNumberById.get(o.id)}</span> {o.customerName}
+                <span><span className="order-num">#{orderNumberById.get(o.id)}</span> {o.customerName}</span>
+                <span className="order-period">{o.checkout} → {o.return}</span>
+                <span className="pill">{rentalDays(o.checkout, o.return)}일</span>
+                {deliveryMethodLabel(o.deliveryMethod) && <span className="pill">{deliveryMethodLabel(o.deliveryMethod)}</span>}
                 {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
               </span>
               <span className="order-amt">{won(o.amount)}</span>
             </div>
 
             <div className="order-sub-row">
-              <span className="order-sub" style={{ margin: 0 }}>{o.checkout} → {o.return}</span>
-              <span className="pill">{rentalDays(o.checkout, o.return)}일</span>
-            </div>
-            <div className="order-sub-row">
               <span className="pill">{getDeliverySlotLabel(o.deliverySlot)}</span>
             </div>
 
             {o.items.length > 0 && (
-              <div className="order-products">
-                {o.items.map((item) => <span key={item.id} className="pill">{item.productName}</span>)}
+              <div className="order-item-list" style={{ marginTop: 10 }}>
+                {o.items.map((item) => (
+                  <div className="order-item-row" key={item.id}>
+                    <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${item.c2}, ${item.c1})` }} />
+                    <div className="order-item-info">
+                      <div className="order-item-name-row">
+                        <span className="order-item-name">{item.productName}</span>
+                      </div>
+                      <div className="order-item-price">{won(item.dailyPrice)} /일</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 

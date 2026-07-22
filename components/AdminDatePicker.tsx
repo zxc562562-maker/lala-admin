@@ -61,8 +61,8 @@ function MiniCalendar({ month, onNavigate, selected, onPick }: {
   const m = month.getMonth();
   const firstDow = new Date(y, m, 1).getDay();
   const len = new Date(y, m + 1, 0).getDate();
-  const nowY = todayLocal().getFullYear();
-  const years = Array.from({ length: 8 }, (_, i) => nowY - 5 + i);
+  // 2026년 이전은 조회할 일이 없어서 휠 시작점을 2026으로 고정
+  const years = Array.from({ length: 8 }, (_, i) => 2026 + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
   type Cell = { blank: true; key: string } | { blank: false; d: number; k: string };
