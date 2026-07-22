@@ -8,7 +8,6 @@ const won = (n: number) => n.toLocaleString('ko-KR') + '원';
 const dateOnly = (s: string) => s.slice(0, 10);
 
 const PAY_LABEL: Record<string, string> = { PENDING: '결제대기', PAID: '결제완료', FAILED: '결제실패', CANCELLED: '취소됨' };
-const PAY_COLOR: Record<string, string> = { PENDING: 'var(--gold)', PAID: 'var(--sage)', FAILED: 'var(--wine)', CANCELLED: 'var(--muted)' };
 
 export default function AdminCustomerDetail({ customer, orders }: { customer: CustomerDetail; orders: CustomerOrderRow[] }) {
   const totalSpent = orders.filter((o) => o.status === 'PAID').reduce((sum, o) => sum + o.amount, 0);
@@ -41,7 +40,7 @@ export default function AdminCustomerDetail({ customer, orders }: { customer: Cu
                 <tr key={o.id}>
                   <td>{o.checkout} → {o.return}</td>
                   <td className="num">{won(o.amount)}</td>
-                  <td><span style={{ color: PAY_COLOR[o.status] ?? 'var(--muted)' }}>● {PAY_LABEL[o.status] ?? o.status}</span></td>
+                  <td><span>● {PAY_LABEL[o.status] ?? o.status}</span></td>
                   <td>{o.status === 'PAID' ? FULFILLMENT_LABEL[o.fulfillment] : '—'}</td>
                 </tr>
               ))}

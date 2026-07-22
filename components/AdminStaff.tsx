@@ -145,7 +145,7 @@ export default function AdminStaff({ staff, currentUserId }: { staff: StaffRow[]
               </select>
             </div>
 
-            {formError && <p style={{ color: 'var(--wine)', fontSize: 12 }}>{formError}</p>}
+            {formError && <p style={{ fontSize: 12 }}>{formError}</p>}
 
             <div className="drawer-actions">
               <button className="btn-ghost" onClick={() => setDrawerOpen(false)} disabled={pending}>취소</button>

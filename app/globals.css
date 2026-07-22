@@ -1,4 +1,6 @@
 @import '../../packages/shared/styles/tokens.css';
+/* 관리자 웹 전용: 기본 글자색을 에스프레소로 고정 (요청 시 개별 요소만 예외 처리) */
+body{color:var(--espresso)}
 .serif{font-family:var(--sans),Georgia,serif}
 .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
@@ -93,16 +95,16 @@
 .amt-group{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
 .subscription-note{font-size:11.5px;font-weight:700;color:var(--wine);text-align:right;line-height:1.5;white-space:nowrap}
 .summary .row.total .amt{font-family:var(--sans),serif;font-size:13px}
-.hint{font-size:13px;color:var(--muted);margin-top:4px;min-height:20px}
+.hint{font-size:13px;color:var(--espresso);margin-top:4px;min-height:20px}
 .delivery-method-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 16px;font-size:12px;color:#4A4146;border-bottom:1px solid var(--line)}
 .delivery-method-pills{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
 .pw-rule{font-size:10.5px;color:var(--muted);margin-top:-2px;margin-bottom:2px;min-height:auto}
 .return-addr-hint{font-size:10.5px;color:var(--espresso);font-weight:500;margin-top:-4px;margin-bottom:-2px;min-height:auto}
-.hint.err{color:var(--wine)}
+.hint.err{color:var(--espresso)}
 .cta{margin-top:18px;width:100%;background:var(--espresso);color:#fff;border:none;padding:16px;border-radius:3px;font-family:var(--sans);font-size:15px;letter-spacing:.04em;cursor:pointer;transition:background .2s}
 .cta:disabled{opacity:.35;cursor:default}
 .cta:not(:disabled):hover{background:#0F0B08}
-.cta.ghost{background:none;color:var(--wine);border:1px solid var(--line)}
+.cta.ghost{background:none;color:var(--espresso);border:1px solid var(--line)}
 .cart-page{padding:8px 0 40px;max-width:560px;margin:0 auto}
 /* 카트 페이지만 헤더 "로그아웃"과 우측을 맞추기 위해 공용 .cart-page의 폭 제한(체크아웃·결제 페이지 등과
    공유)을 풀고 .detail과 동일한 -18px 보정을 적용한다 — 다른 .cart-page 사용처는 그대로 둠. */
@@ -146,8 +148,8 @@
 .nav-links a{color:var(--espresso)}
 .nav-links a:hover{color:var(--wine)}
 .nav-guide{text-decoration:underline;text-underline-offset:2px}
-.linklike{background:none;border:none;cursor:pointer;font-family:var(--sans);font-weight:inherit;font-size:inherit;letter-spacing:.02em;color:var(--muted);padding:0}
-.linklike:hover{color:var(--wine)}
+.linklike{background:none;border:none;cursor:pointer;font-family:var(--sans);font-weight:inherit;font-size:inherit;letter-spacing:.02em;color:var(--espresso);padding:0}
+.linklike:hover{color:var(--espresso)}
 .nav-cta{font-size:inherit}
 .nav-cta:hover{background:var(--wine);color:#fff!important}
 
@@ -162,7 +164,7 @@
 .auth-alt a{color:var(--wine)}
 
 /* 폼 입력 (인증/예약 공용) */
-.field{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:3px;background:var(--card);font-family:var(--sans);font-size:13px;color:var(--ink)}
+.field{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:3px;background:var(--card);font-family:var(--sans);font-size:13px;color:var(--espresso)}
 .field::placeholder{color:var(--muted);font-size:10.5px}
 .field:focus{outline:none;border-color:var(--wine)}
 
@@ -326,7 +328,7 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .admin-sidebar{width:212px;flex:0 0 212px;background:#fff;border-right:1px solid var(--line);padding:26px 18px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:24px;align-items:flex-start}
 .admin-sidebar-logo{width:100%;max-width:100%;height:auto}
 .admin-nav{display:flex;flex-direction:column;gap:2px;width:100%}
-.admin-nav-section{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px;padding:0 10px}
+.admin-nav-section{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--espresso);margin:14px 0 4px;padding:0 10px}
 .admin-nav-section:first-child{margin-top:0}
 .admin-nav a{display:block;padding:9px 10px;border-radius:4px;font-size:13px;color:var(--espresso);letter-spacing:.02em;text-decoration:none;transition:background .15s,color .15s}
 .admin-nav a:hover{background:var(--paper)}
@@ -343,33 +345,33 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .staff-title{font-family:var(--sans);font-size:18px;letter-spacing:.06em;color:var(--espresso);margin:0 0 16px;display:flex;align-items:center;gap:8px}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#D2CACC;flex-shrink:0}
 .live-dot.on{background:var(--sage)}
-.rt-dot{font-size:9px;color:#4F6B5E}
-.staff-empty{color:var(--muted);text-align:center;padding:40px 0}
+.rt-dot{font-size:9px;color:var(--espresso)}
+.staff-empty{color:var(--espresso);text-align:center;padding:40px 0}
 .order-list{display:flex;flex-direction:column;gap:12px}
 .order-card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:14px}
 .order-head{display:flex;justify-content:space-between;align-items:baseline}
 .order-cust{font-size:13.5px;font-weight:500;color:var(--espresso)}
 .order-amt{font-size:12.5px;color:var(--espresso)}
-.order-status{font-size:12px;color:var(--sage)}
-.order-sub{font-size:11.5px;color:var(--muted);margin-top:4px}
+.order-status{font-size:12px;color:var(--espresso)}
+.order-sub{font-size:11.5px;color:var(--espresso);margin-top:4px}
 .order-ctrls{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
-.order-ctrls label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
+.order-ctrls label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--espresso)}
 .order-ctrls select{font-family:var(--sans);font-size:12.5px;padding:7px 8px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--espresso)}
 
 /* 상품/재고/고객/직원/대시보드 — 툴바 + 버튼 + 데이터 테이블 + 등록·수정 드로어 */
 .admin-topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px;flex-wrap:wrap}
 .admin-topbar h1{font-family:var(--sans);font-size:19px;letter-spacing:.05em;color:var(--espresso);font-weight:400}
 .admin-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
-.admin-search{padding:9px 12px;border:1px solid var(--line);border-radius:3px;background:#fff;font-family:var(--sans);font-size:12.5px;color:var(--ink);min-width:220px}
-.admin-search:focus{outline:none;border-color:var(--wine)}
-.admin-select-filter{padding:9px 10px;border:1px solid var(--line);border-radius:3px;background:#fff;font-family:var(--sans);font-size:12.5px;color:var(--ink)}
+.admin-search{padding:9px 12px;border:1px solid var(--line);border-radius:3px;background:#fff;font-family:var(--sans);font-size:12.5px;color:var(--espresso);min-width:220px}
+.admin-search:focus{outline:none;border-color:var(--espresso)}
+.admin-select-filter{padding:9px 10px;border:1px solid var(--line);border-radius:3px;background:#fff;font-family:var(--sans);font-size:12.5px;color:var(--espresso)}
 .admin-spacer{flex:1}
 
 .btn-primary{background:var(--espresso);color:#fff;border:none;border-radius:3px;padding:9px 16px;font-family:var(--sans);font-size:12.5px;letter-spacing:.03em;cursor:pointer;white-space:nowrap}
 .btn-primary:hover{background:#332920}
-.btn-ghost{background:none;border:1px solid var(--line);color:var(--muted);border-radius:3px;padding:9px 16px;font-family:var(--sans);font-size:12.5px;letter-spacing:.03em;cursor:pointer;white-space:nowrap}
+.btn-ghost{background:none;border:1px solid var(--line);color:var(--espresso);border-radius:3px;padding:9px 16px;font-family:var(--sans);font-size:12.5px;letter-spacing:.03em;cursor:pointer;white-space:nowrap}
 .btn-ghost:hover{border-color:var(--espresso);color:var(--espresso)}
-.btn-text{background:none;border:none;color:var(--wine);font-family:var(--sans);font-size:12px;cursor:pointer;padding:4px 6px}
+.btn-text{background:none;border:none;color:var(--espresso);font-family:var(--sans);font-size:12px;cursor:pointer;padding:4px 6px}
 
 .dtable-wrap{border:1px solid var(--line);border-radius:5px;background:#fff;overflow:hidden;overflow-x:auto}
 .dtable{width:100%;border-collapse:collapse;font-size:13px}
@@ -377,15 +379,15 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .dtable.fixed-cols td,.dtable.fixed-cols th{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:10px;padding-right:10px}
 .dtable .ctr{text-align:center}
 .dtable .spacer-col{border-top:none!important;border-bottom:none!important;border-left:1px solid var(--line);border-right:none}
-.dtable thead th{text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;color:var(--muted);padding:11px 16px;background:var(--paper);border-bottom:1px solid var(--line)}
-.dtable tbody td{padding:12px 16px;border-bottom:1px solid var(--line);color:var(--ink);vertical-align:middle}
+.dtable thead th{text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;color:var(--espresso);padding:11px 16px;background:var(--paper);border-bottom:1px solid var(--line)}
+.dtable tbody td{padding:12px 16px;border-bottom:1px solid var(--line);color:var(--espresso);vertical-align:middle}
 .dtable tbody tr:last-child td{border-bottom:none}
 .dtable tbody tr:hover{background:#FBF9F6}
 .dtable .num{text-align:right;font-variant-numeric:tabular-nums}
 .swatch-pair{display:inline-flex;border-radius:50%;overflow:hidden;width:18px;height:18px;border:1px solid var(--line)}
 .swatch-pair span{width:9px;height:18px}
 .prod-name{font-weight:500;color:var(--espresso)}
-.prod-brand{color:var(--muted);font-size:11.5px;margin-top:2px}
+.prod-brand{color:var(--espresso);font-size:11.5px;margin-top:2px}
 
 .drawer-overlay{position:fixed;inset:0;background:rgba(28,22,17,.32);z-index:40}
 .drawer{position:fixed;top:0;right:0;height:100vh;width:400px;max-width:92vw;background:var(--paper);z-index:41;box-shadow:-16px 0 40px rgba(0,0,0,.14);padding:28px 26px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
@@ -393,8 +395,8 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .drawer-row{display:flex;gap:10px}
 .drawer-row .field-group{flex:1;min-width:0}
 .field-group{display:flex;flex-direction:column;gap:5px}
-.field-group label{font-size:11px;color:var(--muted);letter-spacing:.02em}
-.field-group input,.field-group select{font-family:var(--sans);font-size:13px;padding:9px 10px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--ink)}
+.field-group label{font-size:11px;color:var(--espresso);letter-spacing:.02em}
+.field-group input,.field-group select{font-family:var(--sans);font-size:13px;padding:9px 10px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--espresso)}
 .drawer-actions{display:flex;gap:10px;margin-top:8px}
 .drawer-actions .btn-primary,.drawer-actions .btn-ghost{flex:1}
 
@@ -417,10 +419,10 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .pending-desc{font-size:12.5px;color:#4A4146;line-height:1.7;margin-bottom:22px}
 .appr-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:12px 0;gap:12px}
 .appr-name{font-size:13px;font-weight:500;color:var(--espresso)}
-.appr-email{font-size:11.5px;color:var(--muted);margin-top:2px}
+.appr-email{font-size:11.5px;color:var(--espresso);margin-top:2px}
 .appr-btns{display:flex;gap:8px;flex-shrink:0}
 .appr-ok{background:var(--espresso);color:#fff;border:none;border-radius:3px;padding:7px 14px;font-size:11.5px;cursor:pointer;font-family:var(--sans)}
-.appr-no{background:none;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:7px 12px;font-size:11.5px;cursor:pointer;font-family:var(--sans)}
+.appr-no{background:none;color:var(--espresso);border:1px solid var(--line);border-radius:3px;padding:7px 12px;font-size:11.5px;cursor:pointer;font-family:var(--sans)}
 
 /* ===== 내 정보 (프로필 편집) ===== */
 .pf-form{display:flex;flex-direction:column}
@@ -435,8 +437,8 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 /* 마케팅 정보 수신 동의 섹션 — 섹션 제목과 토글 라벨 3개(길이가 서로 다름) 전부 같은 스타일(고정폭+자간)로
    통일해 오른쪽 끝을 서로 맞춘다. */
 .pf-row-label-marketing-fit{width:130px;font-size:10.5px;white-space:nowrap;text-align:justify;text-align-last:justify;text-justify:inter-character}
-.pf-input{flex:1;min-width:0;text-align:right;border:none;background:none;font-family:var(--sans);font-size:13px;color:var(--ink);padding:6px 8px;border-radius:3px}
-.pf-input:disabled{color:var(--muted);cursor:not-allowed}
+.pf-input{flex:1;min-width:0;text-align:right;border:none;background:none;font-family:var(--sans);font-size:13px;color:var(--espresso);padding:6px 8px;border-radius:3px}
+.pf-input:disabled{color:var(--espresso);cursor:not-allowed}
 .pf-edit{background:#fff;border:1px solid #EDE6DC;box-shadow:0 1px 3px rgba(28,22,17,.04)}
 .pf-edit:focus{outline:none;border-color:#DCD3C4;box-shadow:0 1px 4px rgba(28,22,17,.06)}
 .pf-tight{padding-left:3px;padding-right:3px}
@@ -455,7 +457,7 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 /* 기본 배송지 등록/즐겨찾기 추가 팝업 제목 — "배송 주소" 라벨(.field-section)과 같은 10.5px로 통일.
    이 폰트 크기 통일 규칙은 이후 새로 추가되는 폼 관련 UI에도 기본으로 적용한다. */
 .wd-title-fit{font-size:10.5px}
-.wd-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+.wd-desc{font-size:12px;color:var(--espresso);line-height:1.6;margin-bottom:16px}
 .push-prompt-desc{white-space:nowrap;font-size:11px}
 .wd-btns{display:flex;gap:10px;margin-top:6px}
 .wd-btns .cta{margin-top:0;width:100%;display:block}
@@ -465,8 +467,8 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .wd-btns-fit .cta.ghost{padding:9px 12px}
 
 /* ===== 관리자: 분쟁 배지 ===== */
-.order-dispute-badge{display:inline-block;margin-left:8px;font-size:10.5px;color:var(--wine);background:rgba(107,39,55,.12);padding:2px 8px;border-radius:99px;vertical-align:middle}
-.order-dispute-reason{font-size:11.5px;color:var(--wine);margin-top:4px}
+.order-dispute-badge{display:inline-block;margin-left:8px;font-size:10.5px;color:var(--espresso);background:rgba(107,39,55,.12);padding:2px 8px;border-radius:99px;vertical-align:middle}
+.order-dispute-reason{font-size:11.5px;color:var(--espresso);margin-top:4px}
 .order-dispute-ctrl{margin-top:10px}
 
 /* ===== 가입 폼 확장 ===== */
@@ -501,7 +503,7 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .sns-facebook{background:#1877F2;color:#fff}
 .or-divider{display:flex;align-items:center;gap:10px;margin:5px 0 14px;color:var(--muted);font-size:11px}
 .or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--line)}
-.field-section{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+.field-section{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--espresso);margin:12px 0 6px}
 .optional-toggle{width:100%;margin-top:6px;font-size:12.5px;padding:10px}
 .optional-panel{display:flex;flex-direction:column;gap:7px;margin-top:7px;padding:10px 12px;background:#fff;border:1px solid #EDE6DC;border-radius:4px}
 /* 기본 배송지 등록/즐겨찾기 추가/회수 관련 토글 그룹 — .optional-panel의 flex gap(7px)이

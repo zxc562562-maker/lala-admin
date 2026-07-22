@@ -91,7 +91,7 @@ export default function AdminMarketing({ audience, history }: { audience: Record
         )}
 
         {err && <div className="hint err">{err}</div>}
-        {msg && <div className="hint" style={{ color: 'var(--sage)' }}>{msg}</div>}
+        {msg && <div className="hint">{msg}</div>}
         <button className="cta" disabled={pending} onClick={send}>
           {pending ? '처리 중…' : useSchedule ? '예약하기' : '발송하기'}
         </button>
@@ -115,7 +115,7 @@ export default function AdminMarketing({ audience, history }: { audience: Record
                   : `${new Date(h.scheduledAt).toLocaleString('ko-KR')} 예정이었음`}
             </div>
             {h.status === 'scheduled' && (
-              <button className="linklike" disabled={pending} onClick={() => cancel(h.id)} style={{ fontSize: 12, color: 'var(--wine)', marginTop: 6 }}>
+              <button className="linklike" disabled={pending} onClick={() => cancel(h.id)} style={{ fontSize: 12, marginTop: 6 }}>
                 예약 취소
               </button>
             )}

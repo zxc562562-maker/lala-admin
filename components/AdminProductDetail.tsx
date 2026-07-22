@@ -16,11 +16,6 @@ const LABEL: Record<ItemStatus, string> = {
   CLEANING: '세탁중', INSPECTING: '검수중', REPAIRING: '수선중', RETIRED: '폐기',
 };
 
-const BADGE_COLOR: Record<ItemStatus, string> = {
-  AVAILABLE: 'var(--sage)', RESERVED: 'var(--gold)', RENTED: 'var(--wine)', RETURNED: 'var(--muted)',
-  CLEANING: 'var(--gold)', INSPECTING: 'var(--gold)', REPAIRING: 'var(--wine)', RETIRED: 'var(--muted)',
-};
-
 export default function AdminProductDetail({ product, items }: { product: Product; items: AdminInventoryItem[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -70,7 +65,7 @@ export default function AdminProductDetail({ product, items }: { product: Produc
           <button className="btn-primary" onClick={addItem} disabled={pending}>{pending && !busyId ? '추가 중…' : '+ 개체 추가'}</button>
         </div>
       </div>
-      {addError && <p style={{ color: 'var(--wine)', fontSize: 12, marginTop: -12, marginBottom: 12 }}>{addError}</p>}
+      {addError && <p style={{ fontSize: 12, marginTop: -12, marginBottom: 12 }}>{addError}</p>}
 
       <div className="dtable-wrap" style={{ padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
         <span className="swatch-pair" style={{ width: 26, height: 26 }}>
@@ -103,7 +98,7 @@ export default function AdminProductDetail({ product, items }: { product: Produc
                 return (
                   <tr key={it.id}>
                     <td>{it.barcode}</td>
-                    <td><span style={{ color: BADGE_COLOR[it.status], fontSize: 12.5 }}>● {LABEL[it.status]}</span></td>
+                    <td><span style={{ fontSize: 12.5 }}>● {LABEL[it.status]}</span></td>
                     <td className="num">{it.condition}</td>
                     <td className="num">{it.rentalCount}</td>
                     <td>

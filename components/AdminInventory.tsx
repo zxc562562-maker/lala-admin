@@ -11,10 +11,6 @@ const LABEL: Record<ItemStatus, string> = {
   AVAILABLE: '대여가능', RESERVED: '예약됨', RENTED: '대여중', RETURNED: '회수됨',
   CLEANING: '세탁중', INSPECTING: '검수중', REPAIRING: '수선중', RETIRED: '폐기',
 };
-const BADGE_COLOR: Record<ItemStatus, string> = {
-  AVAILABLE: 'var(--sage)', RESERVED: 'var(--gold)', RENTED: 'var(--wine)', RETURNED: 'var(--muted)',
-  CLEANING: 'var(--gold)', INSPECTING: 'var(--gold)', REPAIRING: 'var(--wine)', RETIRED: 'var(--muted)',
-};
 const STATUS_OPTIONS: (ItemStatus | '전체')[] = ['전체', 'AVAILABLE', 'RESERVED', 'RENTED', 'RETURNED', 'CLEANING', 'INSPECTING', 'REPAIRING', 'RETIRED'];
 
 export default function AdminInventory({ items }: { items: InventoryListRow[] }) {
@@ -87,8 +83,8 @@ export default function AdminInventory({ items }: { items: InventoryListRow[] })
                   <td>{it.barcode}</td>
                   <td className="prod-name">{it.productName}</td>
                   <td>{it.productCategory} · {it.productSize}</td>
-                  <td><span style={{ color: BADGE_COLOR[it.status] }}>● {LABEL[it.status]}</span></td>
-                  <td className="num" style={{ color: it.condition < 60 ? 'var(--wine)' : undefined }}>{it.condition}</td>
+                  <td><span>● {LABEL[it.status]}</span></td>
+                  <td className="num">{it.condition}</td>
                   <td className="num">{it.rentalCount}</td>
                   <td><Link href={`/admin/products/${it.productId}`} className="btn-text">상품 보기</Link></td>
                 </tr>

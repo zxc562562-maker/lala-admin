@@ -115,7 +115,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                   분쟁 해결 처리
                 </button>
               ) : (
-                <button className="linklike" disabled={pending} onClick={() => setDisputeTarget(o.id)} style={{ fontSize: 12, color: 'var(--wine)' }}>
+                <button className="linklike" disabled={pending} onClick={() => setDisputeTarget(o.id)} style={{ fontSize: 12 }}>
                   분쟁 지정
                 </button>
               )}

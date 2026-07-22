@@ -50,7 +50,7 @@ export default function AdminClosures({ closures }: { closures: ClosureDay[] }) 
         <input className="field" placeholder="사유(예: 여름 휴가)" value={reason} onChange={(e) => setReason(e.target.value)} />
 
         {err && <div className="hint err">{err}</div>}
-        {msg && <div className="hint" style={{ color: 'var(--sage)' }}>{msg}</div>}
+        {msg && <div className="hint">{msg}</div>}
         <button className="cta" disabled={pending} onClick={add}>
           {pending ? '처리 중…' : '휴무일 등록'}
         </button>
@@ -65,7 +65,7 @@ export default function AdminClosures({ closures }: { closures: ClosureDay[] }) 
               <span className="order-cust">{c.date}</span>
             </div>
             {c.reason && <div className="order-sub">{c.reason}</div>}
-            <button className="linklike" disabled={pending} onClick={() => remove(c.date)} style={{ fontSize: 12, color: 'var(--wine)', marginTop: 6 }}>
+            <button className="linklike" disabled={pending} onClick={() => remove(c.date)} style={{ fontSize: 12, marginTop: 6 }}>
               취소
             </button>
           </div>
