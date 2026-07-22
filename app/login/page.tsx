@@ -33,7 +33,9 @@ function LoginForm() {
         <input className="field" type="password" placeholder="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()} />
         {err && <div className="hint err">{err}</div>}
-        <button className="cta" disabled={busy} onClick={submit}>{busy ? '확인 중…' : '로그인'}</button>
+        <button className="cta" style={{ padding: '9px 12px', fontSize: 13 }} disabled={busy} onClick={submit}>
+          {busy ? '확인 중…' : '로그인'}
+        </button>
       </div>
     </div>
   );
@@ -44,9 +46,8 @@ export default function LoginPage() {
     <div className="landing-wrap">
       <div className="landing" style={{ gap: 28 }}>
         <div className="landing-lock">
-          <span className="wordmark landing-word">Lala</span>
+          <span className="wordmark landing-word" style={{ fontSize: 152 }}>Lala</span>
           <span className="gold-rule landing-rule" />
-          <span className="prod-brand" style={{ marginTop: 8 }}>관리자</span>
         </div>
         <Suspense fallback={null}>
           <LoginForm />

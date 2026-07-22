@@ -321,12 +321,24 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .product-row .li-row .size-chip-row{max-width:135px;flex-wrap:nowrap}
 .li-add.added{border-color:var(--line);color:var(--muted);cursor:default}
 
-/* ===== 직원(관리자/배송) 화면 ===== */
-.staff-header{border-bottom:1px solid var(--line);background:#fff;padding:14px 0}
-.staff-brand{font-family:var(--sans);font-size:14px;letter-spacing:.08em;color:var(--espresso)}
-.staff-nav{display:flex;gap:16px;font-size:12.5px}
-.staff-nav a{color:var(--muted);text-decoration:none}
-.staff-title{font-family:var(--sans);font-size:18px;letter-spacing:.06em;color:var(--espresso);margin:18px 0 16px;display:flex;align-items:center;gap:8px}
+/* ===== 관리자 데스크톱 셸 (왼쪽 사이드바 + 본문) — 16:9 데스크톱 모니터 기준 ===== */
+.admin-shell{display:flex;min-height:100vh;align-items:stretch}
+.admin-sidebar{width:212px;flex:0 0 212px;background:#fff;border-right:1px solid var(--line);padding:26px 18px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:24px;align-items:flex-start}
+.admin-sidebar-logo{height:40px;width:auto}
+.admin-nav{display:flex;flex-direction:column;gap:2px;width:100%}
+.admin-nav a{display:block;padding:9px 10px;border-radius:4px;font-size:13px;color:var(--muted);letter-spacing:.02em;text-decoration:none;transition:background .15s,color .15s}
+.admin-nav a:hover{background:var(--paper);color:var(--ink)}
+.admin-nav-divider{border-top:1px solid var(--line);margin:6px 10px}
+.admin-main{flex:1;min-width:0;padding:34px 44px 60px}
+
+@media(max-width:900px){
+  .admin-sidebar{position:static;height:auto;width:100%;flex-direction:row;align-items:center;padding:14px 18px;overflow-x:auto}
+  .admin-nav{flex-direction:row;width:auto}
+  .admin-shell{flex-direction:column}
+  .admin-main{padding:22px 18px 40px}
+}
+
+.staff-title{font-family:var(--sans);font-size:18px;letter-spacing:.06em;color:var(--espresso);margin:0 0 16px;display:flex;align-items:center;gap:8px}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#D2CACC;flex-shrink:0}
 .live-dot.on{background:var(--sage)}
 .rt-dot{font-size:9px;color:#4F6B5E}
