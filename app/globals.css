@@ -347,15 +347,16 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .live-dot.on{background:var(--sage)}
 .rt-dot{font-size:9px;color:var(--espresso)}
 .staff-empty{color:var(--espresso);text-align:center;padding:40px 0}
-.order-list{display:flex;flex-direction:column;gap:12px}
-.order-card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:14px}
-.order-head{display:flex;justify-content:space-between;align-items:baseline}
-.order-cust{font-size:13.5px;font-weight:500;color:var(--espresso)}
-.order-amt{font-size:12.5px;color:var(--espresso)}
+.order-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px;align-items:start}
+.order-card{border:1px solid var(--line);border-radius:6px;background:#fff;padding:16px 18px;box-shadow:0 1px 2px rgba(28,22,17,.04)}
+.order-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.order-num{font-weight:400;opacity:.5;margin-right:2px}
+.order-cust{font-size:15px;font-weight:600;color:var(--espresso)}
+.order-amt{font-size:14px;font-weight:600;color:var(--espresso);white-space:nowrap}
 .order-status{font-size:12px;color:var(--espresso)}
-.order-sub{font-size:11.5px;color:var(--espresso);margin-top:4px}
-.order-ctrls{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
-.order-ctrls label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--espresso)}
+.order-sub{font-size:12px;color:var(--espresso);opacity:.65;margin-top:4px}
+.order-ctrls{display:flex;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.order-ctrls label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--espresso);opacity:.7}
 .order-ctrls select{font-family:var(--sans);font-size:12.5px;padding:7px 8px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--espresso)}
 
 /* 상품/재고/고객/직원/대시보드 — 툴바 + 버튼 + 데이터 테이블 + 등록·수정 드로어 */

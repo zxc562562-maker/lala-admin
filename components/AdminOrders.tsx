@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import { updateFulfillment, assignOrder, openDispute, resolveDispute, setItemIssue, type OrderRow, type Fulfillment } from '@lala/shared/lib/staff-actions';
@@ -20,6 +20,20 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
   const [pending, startTransition] = useTransition();
   const [disputeTarget, setDisputeTarget] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+
+  // 주문번호: 주문이 실제로 들어온 순서(생성일 오름차순) 기준 — 목록 정렬/필터와 무관하게 고정된 번호.
+  const orderNumberById = useMemo(() => {
+    const byCreatedAsc = [...orders].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const m = new Map<string, number>();
+    byCreatedAsc.forEach((o, i) => m.set(o.id, i + 1));
+    return m;
+  }, [orders]);
+
+  const visibleOrders = useMemo(() => {
+    if (!dateFilter) return orders;
+    return orders.filter((o) => o.createdAt.slice(0, 10) === dateFilter);
+  }, [orders, dateFilter]);
 
   // 실시간: payment_order 변경 시 서버 컴포넌트 재실행
   useEffect(() => {
@@ -55,14 +69,29 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
 
   return (
     <section>
-      <h1 className="staff-title">주문 <span className="rt-dot" title="실시간 연결됨">●</span></h1>
-      {orders.length === 0 && <p className="staff-empty">결제완료된 주문이 없습니다.</p>}
+      <div className="admin-topbar">
+        <h1 className="staff-title">주문 현황 <span className="rt-dot" title="실시간 연결됨">●</span></h1>
+      </div>
+
+      <div className="admin-toolbar">
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
+          날짜별 조회
+          <input type="date" className="admin-search" style={{ minWidth: 0 }} value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
+        </label>
+        {dateFilter && <button className="btn-ghost" onClick={() => setDateFilter('')}>전체 보기</button>}
+        <div className="admin-spacer" />
+        <span className="prod-brand">총 {visibleOrders.length}건</span>
+      </div>
+
+      {visibleOrders.length === 0 && (
+        <p className="staff-empty">{dateFilter ? '해당 날짜에 주문이 없습니다.' : '결제완료된 주문이 없습니다.'}</p>
+      )}
       <div className="order-list">
-        {orders.map((o) => (
+        {visibleOrders.map((o) => (
           <div className="order-card" key={o.id}>
             <div className="order-head">
               <span className="order-cust">
-                {o.customerName}
+                <span className="order-num">#{orderNumberById.get(o.id)}</span> {o.customerName}
                 {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
               </span>
               <span className="order-amt">{won(o.amount)}</span>
