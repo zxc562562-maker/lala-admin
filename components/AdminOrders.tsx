@@ -101,7 +101,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
           <AdminDatePicker value={dateFilter} onChange={(v) => { setDateFilter(v); setRangeStart(''); setRangeEnd(''); setShowAll(false); }} />
         </div>
 
-        <div className="date-range-row">
+        <div className="date-range-row date-range-row-period">
           기간별 조회
           <AdminDatePicker value={rangeStart} placeholder="시작일" onChange={(v) => { setRangeStart(v); setShowAll(false); }} />
           ~

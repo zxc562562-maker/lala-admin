@@ -6,6 +6,11 @@ import { useEffect, useRef, useState } from 'react';
 // 데스크톱 admin에 맞게 크기만 키움) — 스크롤이 멈추면 가장 가까운 항목으로 스냅해 값을 확정한다.
 const WHEEL_ITEM_H = 24;
 
+const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+function withDow(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return `${dateStr} (${DOW[d.getDay()]})`;
+}
 function pad2(n: number): string { return String(n).padStart(2, '0'); }
 function isoOf(y: number, m: number, d: number): string { return `${y}-${pad2(m)}-${pad2(d)}`; }
 function todayLocal(): Date { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
@@ -110,7 +115,7 @@ export default function AdminDatePicker({ value, onChange, placeholder }: {
   return (
     <div className="admin-datefield" ref={wrapRef}>
       <button type="button" className="admin-search admin-datefield-btn" onClick={toggle}>
-        {value || placeholder || '날짜 선택'}
+        {value ? withDow(value) : (placeholder || '날짜 선택')}
       </button>
       {open && (
         <MiniCalendar
