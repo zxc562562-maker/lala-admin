@@ -26,6 +26,13 @@ function rentalDays(checkout: string, ret: string): number {
   return Math.max(1, Math.round(ms / 86400000));
 }
 
+/** 재고 개체에 실제 바코드가 없는 경우(데모/구주문 등)를 위한 대체 표시 — reservation id 기반이라 매번 같은 값이 나온다. */
+function demoBarcode(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return `LALA-${String(h % 100000000).padStart(8, '0')}`;
+}
+
 /** 미지정(null)이면 알약 자체를 안 보여줄 거라 null 리턴. */
 function deliveryMethodLabel(id: string | null): string | null {
   return DELIVERY_METHODS.find((m) => m.id === id)?.label ?? null;
@@ -151,6 +158,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                     <div className="order-item-info">
                       <div className="order-item-name-row">
                         <span className="order-item-name">{item.productName}</span>
+                        <span className="order-item-barcode">{item.barcode ?? demoBarcode(item.id)}</span>
                       </div>
                       <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                     </div>
