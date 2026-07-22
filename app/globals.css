@@ -324,11 +324,13 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 /* ===== 관리자 데스크톱 셸 (왼쪽 사이드바 + 본문) — 16:9 데스크톱 모니터 기준 ===== */
 .admin-shell{display:flex;min-height:100vh;align-items:stretch}
 .admin-sidebar{width:212px;flex:0 0 212px;background:#fff;border-right:1px solid var(--line);padding:26px 18px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:24px;align-items:flex-start}
-.admin-sidebar-logo{height:40px;width:auto}
+.admin-sidebar-logo{width:100%;max-width:100%;height:auto}
 .admin-nav{display:flex;flex-direction:column;gap:2px;width:100%}
-.admin-nav a{display:block;padding:9px 10px;border-radius:4px;font-size:13px;color:var(--muted);letter-spacing:.02em;text-decoration:none;transition:background .15s,color .15s}
-.admin-nav a:hover{background:var(--paper);color:var(--ink)}
-.admin-nav-divider{border-top:1px solid var(--line);margin:6px 10px}
+.admin-nav-section{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px;padding:0 10px}
+.admin-nav-section:first-child{margin-top:0}
+.admin-nav a{display:block;padding:9px 10px;border-radius:4px;font-size:13px;color:var(--espresso);letter-spacing:.02em;text-decoration:none;transition:background .15s,color .15s}
+.admin-nav a:hover{background:var(--paper)}
+.admin-nav-divider{border-top:1px solid var(--line);margin:14px 10px 6px}
 .admin-main{flex:1;min-width:0;padding:34px 44px 60px}
 
 @media(max-width:900px){
