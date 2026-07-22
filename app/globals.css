@@ -1,19 +1,4 @@
-:root{
-  --ink:#211A1F;
-  --wine:#6B2737;
-  --sage:#4F6B5E;
-  --paper:#F8F5F0;
-  --card:#FFFFFF;
-  --espresso:#1C1611;
-  --gold:#B8963F;
-  --muted:#8B8085;
-  --line:#E4DDD1;
-  --taken:#C9BEC2;
-  --sans:var(--font-tenor), var(--font-noto-kr), -apple-system, 'Apple SD Gothic Neo', sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-weight:300;line-height:1.6;-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
+@import '../../packages/shared/styles/tokens.css';
 .serif{font-family:var(--sans),Georgia,serif}
 .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
