@@ -1,0 +1,541 @@
+:root{
+  --ink:#211A1F;
+  --wine:#6B2737;
+  --sage:#4F6B5E;
+  --paper:#F8F5F0;
+  --card:#FFFFFF;
+  --espresso:#1C1611;
+  --gold:#B8963F;
+  --muted:#8B8085;
+  --line:#E4DDD1;
+  --taken:#C9BEC2;
+  --sans:var(--font-tenor), var(--font-noto-kr), -apple-system, 'Apple SD Gothic Neo', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-weight:300;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.serif{font-family:var(--sans),Georgia,serif}
+.eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+
+/* 헤더 */
+.site-header{border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;background:var(--paper)}
+.header-inner{display:flex;flex-direction:column;padding:20px 0 2px}
+.brand-lock{display:flex;flex-direction:column;align-items:center;align-self:center;text-decoration:none}
+.wordmark{font-family:var(--script),'Cormorant Garamond',cursive;font-weight:400;font-size:44px;line-height:1;letter-spacing:.02em;color:var(--espresso)}
+.gold-rule{width:132px;height:1px;margin-top:0;background:linear-gradient(90deg,transparent,#1C1611 50%,transparent)}
+.nav-links{align-self:flex-end;margin-top:16px;margin-right:10px}
+.nav-links.logged-in{align-self:stretch;justify-content:space-between}
+.nav-actions{display:flex;align-items:center;gap:3px}
+.nav-actions a,.nav-actions .linklike{white-space:nowrap}
+.nav-dot{color:var(--muted)}
+.who{color:var(--muted);letter-spacing:.02em;margin-left:10px;white-space:nowrap}
+@media(max-width:600px){
+  .wordmark{font-size:36px}
+  .gold-rule{width:104px}
+  .nav-links{gap:10px;font-size:11.5px;letter-spacing:.02em}
+}
+.nav-meta{font-size:12px;color:var(--muted);letter-spacing:.04em}
+
+/* 히어로 */
+
+/* 카탈로그 */
+.catalog{padding:0 0 80px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px 24px}
+.card{cursor:pointer;display:block;container-type:inline-size}
+.card .frame{position:relative;aspect-ratio:3/4;border-radius:2px;overflow:hidden;border:1px solid var(--line);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.card .frame::after{content:'';position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 2px,transparent 2px 6px);mix-blend-mode:overlay}
+.card:hover .frame{transform:translateY(-3px)}
+.card .name{font-family:var(--sans);font-weight:500;font-size:11.5px;margin-top:6px;text-align:center;letter-spacing:.01em;color:var(--espresso)}
+.card .meta{display:flex;justify-content:center;align-items:baseline;margin-top:2px;gap:70px}
+.card .price,.card .avail{white-space:nowrap}
+/* 카드가 좁아지면 가격·대여가능 간격을 자동으로 축소 (줄바꿈·잘림 방지) */
+@container (max-width:250px){.card .meta{gap:24px}}
+@container (max-width:200px){.card .meta{gap:10px}}
+@container (max-width:165px){.card .meta{gap:5px}}
+.card .price{font-family:var(--sans),serif;font-size:11.5px;color:var(--espresso)}
+.card .price small{font-family:var(--sans);font-size:10px;color:var(--muted)}
+.card .avail{font-size:11px;letter-spacing:.04em;color:var(--sage);font-weight:600}
+
+/* 상세 */
+/* 헤더는 .header-inner가 좌우 패딩을 0으로, nav-links가 margin-right:10px로 우측을 맞추고 있어
+   실제 우측 여백이 10px(사이트 폭 1120px 기준)인 반면, .wrap의 기본 좌우 패딩은 28px라 그 차이인
+   18px만큼 본문 우측 정렬 값들이 헤더의 "로그아웃"보다 더 안쪽에서 끝나 보였다 — 그 18px을 보정. */
+.detail{padding:30px 0 90px;margin-right:-18px}
+.back{display:inline-block;color:var(--muted);font-size:13px;letter-spacing:.04em;padding:6px 0;margin-bottom:22px}
+.back:hover{color:var(--ink)}
+.detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:54px;align-items:start}
+.photo{aspect-ratio:3/4;border-radius:2px;border:1px solid var(--line);position:relative;overflow:hidden;width:100%;max-width:270px;margin:0 auto}
+.info h2{font-family:var(--sans);font-size:15px;font-weight:500;line-height:1.3;letter-spacing:.01em;margin-bottom:10px}
+.info .brand{color:var(--muted);letter-spacing:.06em;margin-top:6px;font-size:13px}
+.pricing{display:flex;gap:30px;margin:0 0 20px;padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.pricing .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.pricing .v{font-family:var(--sans),serif;font-size:13px;margin-top:1px}
+.pricing .v small{font-family:var(--sans);font-size:10px;color:var(--muted)}
+
+/* 캘린더 (시그니처) */
+.cal-label{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-label .eyebrow{color:var(--ink)}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.legend .free i{background:var(--sage)}
+.legend .busy i{background:var(--taken)}
+.cal{padding:2px 0;background:transparent;border:none}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-nav button{background:none;border:1px solid var(--line);border-radius:50%;width:28px;height:28px;cursor:pointer;color:var(--ink);font-size:15px}
+.cal-nav button:disabled{opacity:.3;cursor:default}
+.cal-nav .month{font-family:var(--sans),serif;font-size:15px}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.dow span{text-align:center;font-size:10px;letter-spacing:.06em;color:#B7ADAF}
+.days{display:grid;grid-template-columns:repeat(7,1fr);row-gap:1px;column-gap:2px}
+.day{height:30px;display:flex;align-items:center;justify-content:center;position:relative;font-size:13px;color:var(--espresso);border:none;background:none;font-family:var(--sans);cursor:default;padding:0}
+.day .num{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;line-height:1}
+.day .num.label{font-size:9.5px;letter-spacing:-.02em;font-weight:500}
+.day.blank{visibility:hidden}
+.day.past{visibility:hidden}
+.day.busy .num{color:#D2CACC}
+.day.holiday .num{color:var(--wine)}
+.day.holiday.inrange .num{background:rgba(107,39,55,.12)}
+.day.free{cursor:pointer}
+.day.free:hover .num{background:rgba(28,22,17,.06)}
+.day.sel .num{background:var(--espresso);color:#fff}
+.day.inrange .num{background:rgba(28,22,17,.10)}
+
+.summary{margin-top:22px}
+.summary .row{display:flex;justify-content:space-between;padding:7px 0;font-size:12px;color:#4A4146}
+.summary .row.total{border-top:1px solid var(--line);margin-top:6px;padding-top:14px;color:var(--ink)}
+.deposit-note{font-size:10.5px;color:var(--muted);font-weight:400}
+.amt-group{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.subscription-note{font-size:11.5px;font-weight:700;color:var(--wine);text-align:right;line-height:1.5;white-space:nowrap}
+.summary .row.total .amt{font-family:var(--sans),serif;font-size:13px}
+.hint{font-size:13px;color:var(--muted);margin-top:4px;min-height:20px}
+.delivery-method-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 16px;font-size:12px;color:#4A4146;border-bottom:1px solid var(--line)}
+.delivery-method-pills{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.pw-rule{font-size:10.5px;color:var(--muted);margin-top:-2px;margin-bottom:2px;min-height:auto}
+.return-addr-hint{font-size:10.5px;color:var(--espresso);font-weight:500;margin-top:-4px;margin-bottom:-2px;min-height:auto}
+.hint.err{color:var(--wine)}
+.cta{margin-top:18px;width:100%;background:var(--espresso);color:#fff;border:none;padding:16px;border-radius:3px;font-family:var(--sans);font-size:15px;letter-spacing:.04em;cursor:pointer;transition:background .2s}
+.cta:disabled{opacity:.35;cursor:default}
+.cta:not(:disabled):hover{background:#0F0B08}
+.cta.ghost{background:none;color:var(--wine);border:1px solid var(--line)}
+.cart-page{padding:8px 0 40px;max-width:560px;margin:0 auto}
+/* 카트 페이지만 헤더 "로그아웃"과 우측을 맞추기 위해 공용 .cart-page의 폭 제한(체크아웃·결제 페이지 등과
+   공유)을 풀고 .detail과 동일한 -18px 보정을 적용한다 — 다른 .cart-page 사용처는 그대로 둠. */
+.cart-wide{max-width:none;margin:0 -18px 0 0}
+.cart-title{font-family:var(--sans);font-size:20px;letter-spacing:.16em;margin:6px 0 20px;text-align:center;color:var(--espresso)}
+.cart-list{display:flex;flex-direction:column;gap:14px}
+.cart-item{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding-bottom:14px}
+.cart-thumb{width:54px;height:72px;border-radius:2px;flex:0 0 auto;border:1px solid var(--line)}
+.cart-info{flex:1;min-width:0}
+.cart-name-row{display:flex;align-items:center;justify-content:flex-start;gap:5px}
+.cart-name-group{display:flex;align-items:center;gap:5px;min-width:0}
+.cart-name-group .size-chip{flex-shrink:0}
+.cart-name{font-size:12px;font-weight:500;color:var(--espresso);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.cart-conflict{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:500;color:var(--wine);background:rgba(107,39,55,.08);padding:2px 7px;border-radius:10px;white-space:nowrap}
+.cart-dates{font-size:11.5px;color:var(--muted);margin-top:3px}
+.cart-total{font-size:11.5px;color:var(--muted);margin-top:4px}
+.cart-bottom{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-top:4px}
+.cart-bottom .cart-name-group{flex:1;min-width:0}
+.cart-bottom .cart-total{margin-top:0}
+.cart-x{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px;line-height:1}
+.cart-sum{margin-top:18px}
+.modal-ov{position:fixed;inset:0;background:rgba(28,22,17,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px}
+.modal{background:var(--paper);border-radius:10px;padding:26px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal-msg{font-size:13px;color:var(--espresso);margin-bottom:20px}
+.modal-btns{display:flex;flex-direction:column;gap:10px}
+.modal-btns .cta{margin-top:0;width:100%;display:block;font-size:13px}
+.modal-btns .cta.ghost{width:100%;display:block;padding:14px}
+
+.booked{text-align:center;padding:46px 20px;border:1px solid var(--line);border-radius:3px;background:var(--card)}
+.booked-mark{width:46px;height:46px;border-radius:50%;background:var(--sage);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px}
+.booked p{color:var(--ink);margin-bottom:20px}
+
+@media(max-width:760px){
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .detail-grid{grid-template-columns:1fr;gap:30px}
+  .photo{max-width:270px}
+}
+
+/* ---- 헤더 내비 ---- */
+.nav-links{display:flex;align-items:center;gap:10px;font-size:11.5px;letter-spacing:.02em}
+.nav-links a{color:var(--espresso)}
+.nav-links a:hover{color:var(--wine)}
+.nav-guide{text-decoration:underline;text-underline-offset:2px}
+.linklike{background:none;border:none;cursor:pointer;font-family:var(--sans);font-weight:inherit;font-size:inherit;letter-spacing:.02em;color:var(--muted);padding:0}
+.linklike:hover{color:var(--wine)}
+.nav-cta{font-size:inherit}
+.nav-cta:hover{background:var(--wine);color:#fff!important}
+
+/* ---- 인증 페이지 ---- */
+.auth{max-width:380px;margin:40px auto;padding:0 4px}
+.auth h1{font-family:var(--sans);font-size:34px;font-weight:700;margin-top:6px;letter-spacing:-.01em}
+.auth-sub{color:var(--muted);margin-top:8px;font-size:14px}
+.auth-sub-nowrap{white-space:nowrap;font-size:12.5px;overflow:hidden;text-overflow:ellipsis}
+.auth-form{display:flex;flex-direction:column;gap:7px;margin-top:16px}
+.auth-form .cta{margin-top:6px}
+.auth-alt{margin-top:22px;font-size:13px;color:var(--muted);text-align:center}
+.auth-alt a{color:var(--wine)}
+
+/* 폼 입력 (인증/예약 공용) */
+.field{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:3px;background:var(--card);font-family:var(--sans);font-size:13px;color:var(--ink)}
+.field::placeholder{color:var(--muted);font-size:10.5px}
+.field:focus{outline:none;border-color:var(--wine)}
+
+/* ---- 내 대여 ---- */
+.empty{padding:50px 0;color:var(--muted)}
+.resv-list{position:relative;display:flex;flex-wrap:wrap;gap:8px}
+.resv-swatch{width:48px;height:64px;border-radius:2px;flex-shrink:0}
+.back-link{font-size:13px;color:var(--muted);text-decoration:none}
+/* ===== 상품 상세 페이지 ===== */
+/* 룩북 페이지 대표 이미지(edge-to-edge)와 일체감 있게, 상품 상세 사진도 화면 가득 채움 */
+.product-detail-photo{width:calc(100% + 56px);aspect-ratio:3/4;margin:4px -28px 0}
+.product-detail-name{font-size:15px;font-weight:500;color:var(--espresso);margin-top:16px}
+.product-gallery-list{display:flex;flex-direction:column;gap:2px;margin-top:10px}
+.product-gallery-list .product-detail-photo{margin:0 -28px}
+/* 스크롤해도 렌탈비용·보증금·사이즈칩이 화면 하단에 고정되도록 여백 확보 */
+.product-detail-scroll{padding-bottom:104px}
+.product-sticky-bar{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--line);z-index:50;box-shadow:0 -4px 12px rgba(28,22,17,.06)}
+.product-sticky-bar-inner{max-width:1120px;margin:0 auto;padding:10px 28px 14px}
+.product-sticky-price{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);flex-shrink:0}
+/* 가격(왼쪽) + 사이즈칩·담기(오른쪽) 한 행 배치 — 상품 상세 하단 고정바, 룩북 각 아이템 공통 */
+.product-action-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.product-action-row .li-row{margin-top:0;justify-content:flex-start}
+.product-action-row .li-row .size-chip-row{flex:none}
+.order-detail-plain .row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:13px}
+.order-item-list{display:flex;flex-direction:column;gap:12px}
+.order-item-row{position:relative;display:flex;align-items:center;gap:14px}
+.order-item-response-row{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+.order-item-thumb{width:48px;height:64px;border-radius:2px;flex-shrink:0;object-fit:cover}
+/* 주문 상품 썸네일(상품 상세로 이동)·패키징 사진 썸네일(확대 팝업) 공통 클릭 래퍼 — a/button 기본 스타일 제거 */
+.order-item-thumb-link{display:block;flex-shrink:0;border:none;background:none;padding:0;cursor:pointer;line-height:0}
+.order-item-info{flex:1;min-width:0}
+.order-item-name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.order-item-name{font-size:13px;font-weight:500;color:var(--espresso)}
+.order-item-price{font-size:12.5px;color:var(--muted);margin-top:2px}
+/* 패키징 사진 확대 팝업 이미지 */
+.packaging-photo-lightbox-img{max-width:90vw;max-height:85vh;border-radius:6px;object-fit:contain;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+/* 관리자 패키징 사진 업로드 폼의 미리보기/기존 사진 썸네일 */
+.packaging-photo-thumb{width:64px;height:64px;object-fit:cover;border-radius:3px;border:1px solid var(--line);flex-shrink:0}
+.resv-group{position:relative;margin-bottom:16px;border:1px solid var(--line);border-radius:6px;padding:14px 16px;background:#fff}
+.resv-group-link{display:block;text-decoration:none;color:inherit;cursor:pointer;transition:border-color .15s}
+.resv-group-link:hover{border-color:var(--espresso)}
+.resv-group-date{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);letter-spacing:.02em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.resv-group-date-left{display:flex;align-items:center;gap:8px}
+.resv-status{font-size:11px;letter-spacing:.04em;padding:4px 10px;border-radius:99px;white-space:nowrap;background:var(--espresso);color:var(--paper)}
+.delivery-method-pill{font-size:11px;letter-spacing:.04em;padding:4px 10px;border-radius:99px;white-space:nowrap;background:var(--espresso);color:var(--paper)}
+.resv-status.resv-problem{background:var(--wine);color:var(--paper)}
+/* My 렌탈 조회기간 필터 */
+.account-filter-wrap{margin-bottom:20px}
+.account-filter{display:flex;align-items:center;gap:8px}
+/* 시작일/종료일을 각각 별도 박스+달력으로 분리 — 기간이 길면 달력 하나로 앞뒤 이동을
+   반복해야 하는 문제를 없앰(각자 독립적으로 원하는 달로 바로 이동). */
+.account-filter-box-wrap{position:relative;flex:1;min-width:0}
+/* 클릭 영역을 박스 전체로(예전엔 달력 아이콘 부분만 클릭되던 문제 해소) */
+.account-filter-box{width:100%;text-align:left;padding:9px 12px;border:1px solid var(--line);border-radius:3px;background:var(--card);font-family:var(--sans);font-size:13px;color:var(--ink);cursor:pointer}
+.account-filter-sep{color:var(--muted);flex-shrink:0}
+.account-filter-btn{width:auto;margin-top:0;padding:9px 14px;font-size:13px;flex-shrink:0}
+/* 각 박스와 같은(좁은) 너비로, 바로 아래에 펼쳐지는 커스텀 달력 — 연/월 휠·요일 그리드를
+   그 좁은 폭에 맞춰 축소해서 표현한다(아래 .wheel-*, .account-filter-cal .day 참고) */
+.account-filter-cal{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:20;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:6px 1px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+/* 아이폰 달력 조회 스타일의 연/월 스크롤 휠 — 좁은 박스 폭에 맞춘 축소 버전. 항목 높이가
+   곧 항목 사이 간격이라, 간격을 좁히려면 이 높이 자체를 줄인다(JS의 WHEEL_ITEM_H와 반드시 함께 맞출 것). */
+.wheel-picker{position:relative;display:flex;justify-content:center;gap:4px;margin-bottom:6px}
+.wheel-highlight{position:absolute;left:0;right:0;top:15px;height:15px;background:rgba(28,22,17,.05);border-radius:4px;pointer-events:none;z-index:0}
+.wheel-col{position:relative;z-index:1;width:46px;height:45px;overflow-y:auto;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.wheel-col::-webkit-scrollbar{display:none}
+.wheel-item{height:15px;scroll-snap-align:center;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
+.wheel-item.active{color:var(--espresso);font-weight:600;font-size:12px}
+.wheel-pad{height:15px}
+/* 좁은 박스 폭(약 115px)에 맞춘 요일 그리드 축소 — 좌우 여백을 줄이고 숫자는 더 크게 */
+.account-filter-cal .dow span{font-size:8.5px}
+.account-filter-cal .days{column-gap:0}
+.account-filter-cal .day{height:20px}
+.account-filter-cal .day .num{width:16px;height:16px;font-size:10.5px}
+/* 프리셋(1주일~전체보기)은 알약이 아니라 밑줄 텍스트로 */
+.account-filter-presets{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:10px}
+.account-filter-presets button{padding:0;font-size:10.5px;color:var(--muted);background:none;border:none;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.account-filter-presets button:hover{color:var(--espresso)}
+/* My 렌탈 월별 구분 헤더 — "배송 주소" 라벨(.field-section)과 같은 스타일로 통일 */
+.resv-month-header{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:20px 0 10px}
+.resv-month-header:first-child{margin-top:0}
+.resv-response-row{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px}
+.resv-response{font-size:11px;padding:3px 9px;border-radius:99px;white-space:nowrap;background:#E9E5DF;color:var(--espresso)}
+.request-return-pill{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:4px 10px;border-radius:99px;white-space:nowrap;background:var(--espresso);color:var(--paper);border:none;cursor:pointer}
+.return-info-pill{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:4px 10px;border-radius:99px;white-space:nowrap;background:var(--espresso);color:var(--paper);border:none;cursor:pointer}
+.return-tracking-card{margin-top:-8px}
+.resv-status-group{display:flex;align-items:center;gap:6px}
+.cancel-pill{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:4px 10px;border-radius:99px;white-space:nowrap;background:var(--wine);color:var(--paper);border:none;cursor:pointer}
+.cancel-pill:hover{opacity:.85}
+
+/* ===== 룩북(lookbook) ===== */
+/* 모바일 앱 전용이라 데스크톱 폭(≥640px) 전용 2열 분기는 두지 않음 — 항상 1열(단일) 기준. */
+html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
+.look-grid{display:grid;grid-template-columns:1fr;gap:0;margin:0 -28px}
+.look-view-toggle{display:flex;justify-content:flex-end;gap:0;position:sticky;top:94px;z-index:15;background:var(--paper);margin:0 -28px;padding:9px 24px 9px 0;border-bottom:1px solid var(--line)}
+.look-view-btn{width:32px;height:32px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);padding:0}
+.look-view-btn.on{color:var(--espresso)}
+.look-view-btn.locked{opacity:.35}
+.look-grid-triple{grid-template-columns:repeat(3,1fr) !important;gap:1px !important}
+.look-grid-triple .look-cover{aspect-ratio:3/4;border-radius:2px;border:none}
+.look-grid-triple .look-meta{display:none}
+.look-card{display:block;cursor:pointer;text-decoration:none;color:inherit}
+.look-cover{aspect-ratio:3/4;border-radius:3px;border:1px solid var(--line)}
+.look-meta{padding:10px 2px 0}
+/* 한 개씩 보기: 룩 1개가 화면을 거의 꽉 채우고, 스크롤하면 다음 룩으로 스냅 */
+.look-grid:not(.look-grid-triple) .look-cover{aspect-ratio:auto;height:calc(100dvh - 152px);scroll-snap-align:start}
+.look-title{font-family:var(--sans);font-size:16px;letter-spacing:.04em;color:var(--espresso)}
+.look-sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+.look-detail{padding-top:6px}
+/* 룩 상세 대표 이미지 — 스와이프 캐러셀 대신 세로로 나열 */
+.look-gallery-wrap{margin:0 -28px}
+.look-gallery-list{display:flex;flex-direction:column;gap:2px}
+.look-gallery-item{width:100%;aspect-ratio:3/4}
+.look-h{font-family:var(--sans);font-size:20px;letter-spacing:.04em;text-align:center;margin-top:16px;color:var(--espresso)}
+.look-desc{font-size:12.5px;color:#4A4146;text-align:center;margin:8px auto 0;line-height:1.7;max-width:34ch}
+.look-items-label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:24px 0 12px}
+.look-items{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 1px;margin:0 -28px}
+.look-item{display:flex;flex-direction:column}
+.li-thumb{width:100%;aspect-ratio:3/4;border-radius:2px;border:1px solid var(--line)}
+/* 룩 카드 썸네일 클릭 → 상품 상세 페이지(/products/[id])로 이동 — a 기본 스타일 제거 */
+.li-thumb-link{display:block;line-height:0}
+.li-info{margin-top:2px;text-align:center}
+.li-name{font-size:11.5px;font-weight:500;color:var(--espresso)}
+.li-price{font-size:11px;color:var(--muted);white-space:nowrap;display:block;margin-top:1px}
+.size-chip-row-slot{width:50%;margin:5px auto 0;justify-content:center}
+.li-add{margin:5px auto 0;display:block;width:50%;background:none;border:1px solid var(--espresso);color:var(--espresso);border-radius:3px;padding:5px;font-size:11px;cursor:pointer;font-family:var(--sans)}
+.size-chip-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;justify-content:center}
+/* 사이즈 칩(왼쪽)과 담기 버튼(오른쪽)을 한 줄에 — 담기를 누른 뒤에도 사이즈를 계속 바꿔 고를 수 있게 */
+.li-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.look-items .li-row{padding:0 8px;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.look-items .li-row .size-chip-row{flex:none;margin:0}
+.li-row .size-chip-row{margin-top:0;justify-content:flex-start;flex:1;min-width:0}
+.li-row .li-add{margin:0;width:auto;flex-shrink:0;padding:6px 14px}
+.li-row .li-add:disabled:not(.added){opacity:.4;cursor:not-allowed}
+.size-chip{font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--espresso);color:var(--espresso);line-height:1.5;font-family:inherit;appearance:none;background:none}
+.size-chip.unavailable{cursor:default}
+.size-chip.pending{opacity:.35;cursor:not-allowed}
+.delivery-slot-empty{font-size:11.5px;color:var(--muted)}
+.size-chip.pickable{background:#fff;cursor:pointer;font-family:var(--sans)}
+.size-chip.chosen{background:var(--espresso);color:#fff;border-color:var(--espresso)}
+.cart-size-row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.cart-size-apply{font-size:11px;padding:3px 10px;border-radius:10px;border:1px solid var(--espresso);background:var(--espresso);color:#fff;cursor:pointer;font-family:var(--sans)}
+.size-chip.unavailable{border-color:var(--line);color:var(--muted);text-decoration:line-through}
+/* 전체 상품 보기 — 카테고리 필터(밑줄 링크) */
+.category-filter-row{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin:9px 0}
+.category-filter-link{padding:0;font-size:10.5px;color:var(--muted);background:none;border:none;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.category-filter-link.on{color:var(--espresso);font-weight:600}
+.product-list{display:flex;flex-direction:column;gap:0}
+.product-row{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:1px 0}
+.product-row-thumb{width:65px;height:85px;border-radius:2px;flex:0 0 auto;border:1px solid var(--line)}
+.product-row-info{flex:1;min-width:0}
+.product-row-name{font-size:12px;font-weight:500;color:var(--espresso)}
+.product-row-price{font-size:11.5px;color:var(--muted);white-space:nowrap;display:block;margin-top:2px}
+.product-row .li-add{width:auto;margin:0;padding:8px 14px;flex-shrink:0}
+.product-row .size-chip-row-slot{width:auto;margin:0;flex-shrink:0;max-width:150px;justify-content:flex-end}
+.product-row .li-row{margin-top:0;flex-shrink:0}
+.product-row .li-row .size-chip-row{max-width:135px;flex-wrap:nowrap}
+.li-add.added{border-color:var(--line);color:var(--muted);cursor:default}
+
+/* ===== 직원(관리자/배송) 화면 ===== */
+.staff-header{border-bottom:1px solid var(--line);background:#fff;padding:14px 0}
+.staff-brand{font-family:var(--sans);font-size:14px;letter-spacing:.08em;color:var(--espresso)}
+.staff-nav{display:flex;gap:16px;font-size:12.5px}
+.staff-nav a{color:var(--muted);text-decoration:none}
+.staff-title{font-family:var(--sans);font-size:18px;letter-spacing:.06em;color:var(--espresso);margin:18px 0 16px;display:flex;align-items:center;gap:8px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#D2CACC;flex-shrink:0}
+.live-dot.on{background:var(--sage)}
+.rt-dot{font-size:9px;color:#4F6B5E}
+.staff-empty{color:var(--muted);text-align:center;padding:40px 0}
+.order-list{display:flex;flex-direction:column;gap:12px}
+.order-card{border:1px solid var(--line);border-radius:4px;background:#fff;padding:14px}
+.order-head{display:flex;justify-content:space-between;align-items:baseline}
+.order-cust{font-size:13.5px;font-weight:500;color:var(--espresso)}
+.order-amt{font-size:12.5px;color:var(--espresso)}
+.order-status{font-size:12px;color:var(--sage)}
+.order-sub{font-size:11.5px;color:var(--muted);margin-top:4px}
+.order-ctrls{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+.order-ctrls label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
+.order-ctrls select{font-family:var(--sans);font-size:12.5px;padding:7px 8px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--espresso)}
+
+/* ===== 랜딩 / 승인대기 / 가입승인 ===== */
+.landing-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.landing{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;text-align:center}
+.landing-lock{display:flex;flex-direction:column;align-items:center}
+.landing-word{font-family:var(--script);font-size:76px;line-height:1;color:var(--espresso)}
+.landing-rule{width:140px;height:1px;background:linear-gradient(90deg,transparent,#1C1611 50%,transparent);margin-top:2px}
+.landing-row{display:flex;gap:8px;justify-content:center;flex-wrap:nowrap}
+.land-btn{font-size:11px;padding:0;border:none;background:none;color:var(--espresso);font-family:var(--sans);letter-spacing:.03em;cursor:pointer;white-space:nowrap;opacity:.72;transition:opacity .2s;text-decoration:none}
+.land-btn:hover{opacity:1}
+.pending-box{max-width:300px;text-align:center}
+.pending-title{font-size:16px;color:var(--espresso);margin-bottom:10px}
+.pending-desc{font-size:12.5px;color:#4A4146;line-height:1.7;margin-bottom:22px}
+.appr-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:12px 0;gap:12px}
+.appr-name{font-size:13px;font-weight:500;color:var(--espresso)}
+.appr-email{font-size:11.5px;color:var(--muted);margin-top:2px}
+.appr-btns{display:flex;gap:8px;flex-shrink:0}
+.appr-ok{background:var(--espresso);color:#fff;border:none;border-radius:3px;padding:7px 14px;font-size:11.5px;cursor:pointer;font-family:var(--sans)}
+.appr-no{background:none;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:7px 12px;font-size:11.5px;cursor:pointer;font-family:var(--sans)}
+
+/* ===== 내 정보 (프로필 편집) ===== */
+.pf-form{display:flex;flex-direction:column}
+.pf-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:5px 0;border-bottom:1px solid var(--line)}
+.pf-row label{font-size:12px;color:var(--muted);flex-shrink:0;width:50px;display:inline-block;text-align:justify;text-align-last:justify;text-justify:inter-character}
+.pf-row-label{font-size:12px;color:var(--muted);flex-shrink:0;display:inline-block}
+/* 배송 정보 폼의 "기본 배송지 등록"/"즐겨찾기 추가"/"회수 주소(근무지) 동일"/"이 근무지에서 회수" 토글 라벨 —
+   "배송 주소" 라벨(.field-section)과 같은 10.5px로 통일. 글자 수가 서로 달라도 고정 너비 안에서
+   자간을 최소한으로만 벌려 오른쪽 끝(토글 시작 지점)이 서로 맞춰지도록 함(너비는 가장 긴 라벨
+   기준으로 딱 맞춰 자간이 최대한 좁게 보이도록 함). */
+.pf-row-label-fit{width:85px;font-size:10.5px;text-align:justify;text-align-last:justify;text-justify:inter-character}
+/* 마케팅 정보 수신 동의 섹션 — 섹션 제목과 토글 라벨 3개(길이가 서로 다름) 전부 같은 스타일(고정폭+자간)로
+   통일해 오른쪽 끝을 서로 맞춘다. */
+.pf-row-label-marketing-fit{width:130px;font-size:10.5px;white-space:nowrap;text-align:justify;text-align-last:justify;text-justify:inter-character}
+.pf-input{flex:1;min-width:0;text-align:right;border:none;background:none;font-family:var(--sans);font-size:13px;color:var(--ink);padding:6px 8px;border-radius:3px}
+.pf-input:disabled{color:var(--muted);cursor:not-allowed}
+.pf-edit{background:#fff;border:1px solid #EDE6DC;box-shadow:0 1px 3px rgba(28,22,17,.04)}
+.pf-edit:focus{outline:none;border-color:#DCD3C4;box-shadow:0 1px 4px rgba(28,22,17,.06)}
+.pf-tight{padding-left:3px;padding-right:3px}
+.pf-w5{flex:none;width:calc(5ch + 6px)}
+.pf-w13{flex:none;width:calc(13ch + 6px)}
+.pf-w16{flex:none;width:calc(16ch + 6px)}
+.pf-center{text-align:center}
+.pf-phone-row{position:relative}
+.pf-phone-hint{position:absolute;right:0;top:100%;margin-top:2px;font-size:10px;color:var(--muted);opacity:.7}
+.pf-foot{display:flex;justify-content:flex-end;padding:11px 0 0}
+.pf-withdraw{font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.pf-withdraw:hover{color:var(--wine)}
+.wd-ov{position:fixed;inset:0;background:rgba(28,22,17,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px}
+.wd-box{background:var(--paper);border-radius:10px;padding:26px 22px;max-width:320px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.wd-title{font-size:15px;color:var(--espresso);margin-bottom:8px;font-weight:500}
+/* 기본 배송지 등록/즐겨찾기 추가 팝업 제목 — "배송 주소" 라벨(.field-section)과 같은 10.5px로 통일.
+   이 폰트 크기 통일 규칙은 이후 새로 추가되는 폼 관련 UI에도 기본으로 적용한다. */
+.wd-title-fit{font-size:10.5px}
+.wd-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+.push-prompt-desc{white-space:nowrap;font-size:11px}
+.wd-btns{display:flex;gap:10px;margin-top:6px}
+.wd-btns .cta{margin-top:0;width:100%;display:block}
+.wd-btns .cta.ghost{width:100%;display:block;padding:14px}
+/* 기본 배송지 등록/즐겨찾기 추가 팝업의 취소/등록 버튼 — 별칭 입력란(.field)과 같은 크기로 축소 */
+.wd-btns-fit .cta{padding:9px 12px;font-size:13px}
+.wd-btns-fit .cta.ghost{padding:9px 12px}
+
+/* ===== 관리자: 분쟁 배지 ===== */
+.order-dispute-badge{display:inline-block;margin-left:8px;font-size:10.5px;color:var(--wine);background:rgba(107,39,55,.12);padding:2px 8px;border-radius:99px;vertical-align:middle}
+.order-dispute-reason{font-size:11.5px;color:var(--wine);margin-top:4px}
+.order-dispute-ctrl{margin-top:10px}
+
+/* ===== 가입 폼 확장 ===== */
+.agree-row{display:flex;align-items:center;gap:8px;font-size:12px;color:#4A4146;padding:1px 0}
+.remember-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:13px;color:var(--espresso);margin-top:6px;padding:2px 0}
+.ios-toggle{position:relative;display:inline-block;width:36px;height:21px;flex-shrink:0}
+.ios-toggle input{opacity:0;width:0;height:0;position:absolute}
+.ios-slider{position:absolute;inset:0;background:#D9D2C7;border-radius:24px;cursor:pointer;transition:background .2s}
+.ios-slider::before{content:"";position:absolute;height:17px;width:17px;left:2px;top:2px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.ios-toggle input:checked + .ios-slider{background:var(--espresso)}
+.ios-toggle input:checked + .ios-slider::before{transform:translateX(15px)}
+.agree-all-row{display:flex;align-items:center;gap:10px;padding:7px 14px;margin-top:12px;background:#fff;border:1.5px solid var(--espresso);border-radius:6px;cursor:pointer}
+.agree-all-row input[type="checkbox"]{width:19px;height:19px;flex-shrink:0;accent-color:var(--espresso)}
+.agree-all-row span{display:flex;flex-direction:column;gap:2px;margin-left:10px}
+.agree-all-row strong{font-size:14px;color:var(--espresso);font-weight:700}
+.agree-all-row small{font-size:11px;color:var(--muted)}
+.agree-row-sub{padding-left:6px;font-size:10.5px;color:var(--muted);opacity:.85}
+.agree-row-sub input[type="checkbox"]{width:13px;height:13px}
+.agree-view{margin-left:auto;font-size:11px;color:var(--muted);text-decoration:underline;text-underline-offset:2px;cursor:pointer;flex-shrink:0}
+.agree-view:hover{color:var(--wine)}
+.legal-box{background:var(--paper);border-radius:10px;padding:24px 22px;max-width:400px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.legal-title{font-size:15px;color:var(--espresso);margin-bottom:14px;font-weight:500;flex-shrink:0}
+.legal-body{font-size:12px;color:#4A4146;line-height:1.8;white-space:pre-wrap;overflow-y:auto;margin-bottom:16px;flex:1;min-height:0}
+.agree-row input[type="checkbox"]{width:15px;height:15px;flex-shrink:0;accent-color:var(--espresso)}
+
+/* ===== 가입 폼: SNS 간편가입(흉내)·휴대폰 인증(흉내) ===== */
+.sns-row{display:flex;flex-direction:column;gap:6px;margin:14px 0 4px}
+.sns-btn{width:100%;padding:10px;border-radius:3px;border:none;font-family:var(--sans);font-size:12.5px;cursor:pointer;letter-spacing:.02em}
+.sns-kakao{background:#FEE500;color:#3C1E1E}
+.sns-naver{background:#03C75A;color:#fff}
+.sns-google{background:#fff;color:#3C3C3C;border:1px solid var(--line)}
+.sns-facebook{background:#1877F2;color:#fff}
+.or-divider{display:flex;align-items:center;gap:10px;margin:5px 0 14px;color:var(--muted);font-size:11px}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--line)}
+.field-section{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+.optional-toggle{width:100%;margin-top:6px;font-size:12.5px;padding:10px}
+.optional-panel{display:flex;flex-direction:column;gap:7px;margin-top:7px;padding:10px 12px;background:#fff;border:1px solid #EDE6DC;border-radius:4px}
+/* 기본 배송지 등록/즐겨찾기 추가/회수 관련 토글 그룹 — .optional-panel의 flex gap(7px)이
+   그룹 내부 토글 사이에도 그대로 적용돼 촘촘하게 묶이지 않던 것을, 그룹을 감싸는 컨테이너로
+   분리해 내부 gap을 0으로 만들고 각 행 자체의 padding(2px 0)만으로 최소 여백을 준다. */
+.toggle-group{display:flex;flex-direction:column}
+.delivery-mode-row{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.delivery-mode-btn{width:66.6%;align-self:center;margin-top:0;padding:10px;font-size:12.5px}
+.field-section:first-of-type{margin-top:0}
+.phone-row{display:flex;gap:8px}
+.addr-row{display:flex;gap:8px}
+.addr-row .field{flex:1;min-width:0}
+.addr-btn{width:auto;margin-top:0;flex-shrink:0;padding:0 14px;font-size:12px;white-space:nowrap}
+.push-toggle-btn{padding-top:10px;padding-bottom:10px}
+.addr-jibun{font-size:11px;color:var(--muted);margin-top:-2px}
+.addr-jibun-profile{text-align:right}
+
+/* 배송 주소 라벨 옆 "기본 배송지"/"주소록" 알약 */
+.field-section-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 6px}
+.field-section-row .field-section{margin:0}
+.addr-pills{display:flex;gap:6px;flex-shrink:0}
+
+/* 주소록 */
+.addr-book-panel{display:flex;flex-direction:column;gap:8px}
+.addr-book-item{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:2px 0;border-bottom:1px solid var(--line)}
+.addr-book-info{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;background:none;border:none;padding:6px 0;margin:0;font-family:inherit;text-align:left;cursor:pointer}
+.addr-book-label-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.addr-book-label-text{font-size:13px;color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+.addr-book-default{font-size:9.5px;color:var(--sage);border:1px solid var(--sage);border-radius:10px;padding:1px 6px}
+.addr-book-summary{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.addr-book-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;padding-top:6px}
+.addr-book-btn{width:auto;margin-top:0;padding:5px 9px;font-size:10.5px;white-space:nowrap}
+.addr-book-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px;line-height:1}
+.addr-book-edit-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.addr-book-edit{display:flex;flex-direction:column;gap:7px;width:100%}
+.addr-book-edit-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:2px}
+.addr-book-edit-actions .cta{margin-top:0}
+.phone-row .field{flex:1;min-width:0}
+.phone-btn{width:auto;margin-top:0;flex-shrink:0;padding:0 14px;font-size:12px;white-space:nowrap}
+.phone-code-row{display:flex;gap:8px;margin-top:5px}
+.phone-code-row .field{flex:1;min-width:0}
+.verify-ok{color:var(--sage);font-weight:500}
+
+/* ===== 비로그인 룩북 그리드: 9개 초과 잠금(블러) ===== */
+.lock-wrap{position:relative;margin-top:22px}
+.lock-blur{filter:blur(6px);opacity:.55;pointer-events:none;user-select:none}
+.lock-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+
+/* ===== 이용안내(User Guide) ===== */
+.guide-page{padding:6px 0 60px;margin-right:-18px}
+.guide-hero{text-align:center;padding:0 0 24px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.guide-title{font-family:var(--sans);font-size:20px;letter-spacing:.16em;color:var(--espresso);margin:6px 0}
+.guide-sub{color:var(--muted);font-size:12.5px;margin-top:6px}
+.guide-phase{margin-bottom:18px}
+.guide-phase-label{margin:0 0 8px}
+.guide-flow-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px 0}
+.guide-chip{font-size:11.5px;padding:5px 10px;border-radius:6px;background:var(--card);border:1px solid var(--line);color:var(--espresso);white-space:nowrap}
+.guide-arrow{color:var(--gold);margin:0 4px;font-size:12px;flex-shrink:0}
+.guide-note{font-size:12px;color:var(--muted);margin-top:14px}
+.guide-section{padding:26px 0;border-bottom:1px solid var(--line)}
+.guide-section:last-child{border-bottom:none}
+.guide-section-eyebrow{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.guide-num{font-family:var(--sans),serif;color:var(--gold);font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+.guide-h2{font-family:var(--sans);font-weight:500;font-size:17px;margin:2px 0 10px;color:var(--espresso)}
+.guide-section p{font-size:13.5px;margin-bottom:10px;color:var(--ink)}
+.guide-section p:last-child{margin-bottom:0}
+.guide-lede{color:var(--muted)!important}
+.guide-steps{list-style:none;display:flex;flex-direction:column;gap:9px;margin-top:12px}
+.guide-steps li{display:flex;gap:9px;font-size:13px;align-items:flex-start}
+.guide-steps b{color:var(--espresso);font-weight:500}
+.guide-dot{flex-shrink:0;width:18px;height:18px;border-radius:50%;border:1px solid var(--line);color:var(--muted);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.guide-card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin-top:14px}
+.guide-card-label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--sage);font-weight:700;margin-bottom:5px}
+.guide-card p{font-size:12.5px;color:var(--muted);margin:0}
+.guide-card.warn .guide-card-label{color:var(--wine)}
+.guide-stagepills{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px}
+.guide-stagesep{color:var(--muted);font-size:11px}
+.guide-faq-item{padding:14px 0;border-bottom:1px solid var(--line)}
+.guide-faq-item:last-child{border-bottom:none}
+.guide-faq-q{display:flex;gap:8px;font-size:13.5px;font-weight:500;color:var(--espresso);margin-bottom:5px}
+.guide-faq-q .q{color:var(--wine);flex-shrink:0}
+.guide-faq-a{font-size:12.5px;color:var(--muted);padding-left:17px}
+.lock-msg{font-size:13px;color:var(--espresso);background:rgba(248,245,240,.9);padding:4px 10px;border-radius:3px}
