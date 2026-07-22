@@ -42,8 +42,8 @@ export default function PackagingPhotoAdminForm({
 
   return (
     <div className="order-issue-items">
-      <div className="field-section" style={{ margin: '8px 0 4px' }}>패키징 완료 사진 (회원에게 안내됨)</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <span className="field-section" style={{ margin: 0, flexShrink: 0 }}>패키징 완료 사진 (회원에게 안내됨)</span>
         {(preview || photoUrl) && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -52,18 +52,16 @@ export default function PackagingPhotoAdminForm({
             className="packaging-photo-thumb"
           />
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <input ref={inputRef} type="file" accept="image/*" onChange={pick} disabled={busy} />
-          <button
-            type="button"
-            className="cta ghost"
-            style={{ width: 'auto', padding: '8px 14px', fontSize: 12, alignSelf: 'flex-start', marginTop: 0 }}
-            disabled={busy}
-            onClick={upload}
-          >
-            {busy ? '업로드 중…' : photoUrl ? '재업로드' : '업로드'}
-          </button>
-        </div>
+        <input ref={inputRef} type="file" accept="image/*" onChange={pick} disabled={busy} />
+        <button
+          type="button"
+          className="cta ghost"
+          style={{ width: 'auto', padding: '8px 14px', fontSize: 12, marginTop: 0 }}
+          disabled={busy}
+          onClick={upload}
+        >
+          {busy ? '업로드 중…' : photoUrl ? '재업로드' : '업로드'}
+        </button>
       </div>
       {err && <p className="hint err" style={{ margin: '4px 0 0', minHeight: 0 }}>{err}</p>}
     </div>

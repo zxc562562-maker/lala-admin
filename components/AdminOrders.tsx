@@ -138,9 +138,11 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
             <div className="order-head">
               <span className="order-cust">
                 <span><span className="order-num">#{orderNumberById.get(o.id)}</span> {o.customerName}</span>
-                <span className="order-period">{o.checkout} → {o.return}</span>
-                <span className="pill">{rentalDays(o.checkout, o.return)}일</span>
-                {deliveryMethodLabel(o.deliveryMethod) && <span className="pill">{deliveryMethodLabel(o.deliveryMethod)}</span>}
+                <span className="order-period-group">
+                  <span className="order-period">{o.checkout} → {o.return}</span>
+                  <span className="pill">{rentalDays(o.checkout, o.return)}일</span>
+                  {deliveryMethodLabel(o.deliveryMethod) && <span className="pill">{deliveryMethodLabel(o.deliveryMethod)}</span>}
+                </span>
                 {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
               </span>
               <span className="order-amt">{won(o.amount)}</span>
