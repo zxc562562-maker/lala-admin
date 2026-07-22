@@ -1,0 +1,194 @@
+'use client';
+
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
+import { createProduct, updateProduct, type ProductRow, type ProductInput } from '@/lib/product-actions';
+
+const won = (n: number) => n.toLocaleString('ko-KR') + '원';
+
+const EMPTY_FORM: ProductInput = {
+  name: '', brand: '', category: '', size: '', dailyPrice: 0, deposit: 0, c1: '#3B2230', c2: '#6B2737',
+};
+
+export default function AdminProducts({ products }: { products: ProductRow[] }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('전체');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<ProductInput>(EMPTY_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const sb = supabaseBrowser();
+    const ch = sb
+      .channel('admin-products')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'product' }, () => router.refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_item' }, () => router.refresh())
+      .subscribe();
+    return () => { sb.removeChannel(ch); };
+  }, [router]);
+
+  const categories = useMemo(() => {
+    const set = new Set(products.map((p) => p.category));
+    return ['전체', ...Array.from(set)];
+  }, [products]);
+
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      const matchesCategory = category === '전체' || p.category === category;
+      const q = query.trim().toLowerCase();
+      const matchesQuery = !q || p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q);
+      return matchesCategory && matchesQuery;
+    });
+  }, [products, query, category]);
+
+  function openCreate() {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setFormError(null);
+    setDrawerOpen(true);
+  }
+
+  function openEdit(p: ProductRow) {
+    setEditingId(p.id);
+    setForm({ name: p.name, brand: p.brand, category: p.category, size: p.size, dailyPrice: p.dailyPrice, deposit: p.deposit, c1: p.c1, c2: p.c2 });
+    setFormError(null);
+    setDrawerOpen(true);
+  }
+
+  function closeDrawer() {
+    if (pending) return;
+    setDrawerOpen(false);
+  }
+
+  function submit() {
+    setFormError(null);
+    startTransition(async () => {
+      const result = editingId ? await updateProduct(editingId, form) : await createProduct(form);
+      if (!result.ok) {
+        setFormError(result.reason ?? '저장에 실패했습니다.');
+        return;
+      }
+      setDrawerOpen(false);
+      router.refresh();
+    });
+  }
+
+  return (
+    <section>
+      <div className="admin-topbar">
+        <h1 className="staff-title">상품 <span className="rt-dot" title="실시간 연결됨">●</span></h1>
+        <button className="btn-primary" onClick={openCreate}>+ 상품 등록</button>
+      </div>
+
+      <div className="admin-toolbar">
+        <input className="admin-search" placeholder="상품명 · 브랜드 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <select className="admin-select-filter" value={category} onChange={(e) => setCategory(e.target.value)}>
+          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <div className="admin-spacer" />
+        <span className="prod-brand">총 {filtered.length}개</span>
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="staff-empty">등록된 상품이 없습니다.</p>
+      ) : (
+        <div className="dtable-wrap">
+          <table className="dtable">
+            <thead>
+              <tr>
+                <th>색상</th><th>상품</th><th>카테고리</th><th>사이즈</th>
+                <th className="num">일 대여료</th><th className="num">보증금</th><th className="num">재고</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <span className="swatch-pair">
+                      <span style={{ background: p.c1 }} />
+                      <span style={{ background: p.c2 }} />
+                    </span>
+                  </td>
+                  <td>
+                    <Link href={`/admin/products/${p.id}`} className="prod-name" style={{ textDecoration: 'none' }}>{p.name}</Link>
+                    {p.brand && <div className="prod-brand">{p.brand}</div>}
+                  </td>
+                  <td>{p.category}</td>
+                  <td>{p.size}</td>
+                  <td className="num">{won(p.dailyPrice)}</td>
+                  <td className="num">{won(p.deposit)}</td>
+                  <td className="num">{p.itemCount}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <Link href={`/admin/products/${p.id}`} className="btn-text">재고</Link>
+                    <button className="btn-text" onClick={() => openEdit(p)}>수정</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {drawerOpen && (
+        <>
+          <div className="drawer-overlay" onClick={closeDrawer} />
+          <div className="drawer">
+            <h2>{editingId ? '상품 수정' : '상품 등록'}</h2>
+            <div className="field-group">
+              <label>상품명</label>
+              <input className="field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div className="field-group">
+              <label>브랜드</label>
+              <input className="field" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
+            </div>
+            <div className="drawer-row">
+              <div className="field-group">
+                <label>카테고리</label>
+                <input className="field" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+              </div>
+              <div className="field-group">
+                <label>사이즈</label>
+                <input className="field" value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} />
+              </div>
+            </div>
+            <div className="drawer-row">
+              <div className="field-group">
+                <label>일 대여료(원)</label>
+                <input type="number" min="0" step="1000" className="field" value={form.dailyPrice}
+                  onChange={(e) => setForm({ ...form, dailyPrice: Math.max(0, Number(e.target.value) || 0) })} />
+              </div>
+              <div className="field-group">
+                <label>보증금(원)</label>
+                <input type="number" min="0" step="1000" className="field" value={form.deposit}
+                  onChange={(e) => setForm({ ...form, deposit: Math.max(0, Number(e.target.value) || 0) })} />
+              </div>
+            </div>
+            <div className="drawer-row">
+              <div className="field-group">
+                <label>스와치 색상 1 (어두운 쪽)</label>
+                <input type="color" className="field" value={form.c1} onChange={(e) => setForm({ ...form, c1: e.target.value })} />
+              </div>
+              <div className="field-group">
+                <label>스와치 색상 2 (밝은 쪽)</label>
+                <input type="color" className="field" value={form.c2} onChange={(e) => setForm({ ...form, c2: e.target.value })} />
+              </div>
+            </div>
+
+            {formError && <p style={{ color: 'var(--wine)', fontSize: 12 }}>{formError}</p>}
+
+            <div className="drawer-actions">
+              <button className="btn-ghost" onClick={closeDrawer} disabled={pending}>취소</button>
+              <button className="btn-primary" onClick={submit} disabled={pending}>{pending ? '저장 중…' : '저장'}</button>
+            </div>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}

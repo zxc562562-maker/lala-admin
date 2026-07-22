@@ -16,7 +16,8 @@
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "server-only": "^0.0.1",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^20",

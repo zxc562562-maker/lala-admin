@@ -17,10 +17,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <span className="staff-brand">Lala · 관리자</span>
           <nav className="staff-nav">
             <Link href="/admin">주문</Link>
+            <Link href="/admin/products">상품</Link>
+            <Link href="/admin/inventory">재고</Link>
             <Link href="/admin/approvals">승인</Link>
             <Link href="/admin/marketing">마케팅</Link>
             <Link href="/admin/address-log">배송정보 변경</Link>
             <Link href="/admin/closures">휴무일</Link>
+            <Link href="/admin/customers">고객</Link>
+            <Link href="/admin/stats">대시보드</Link>
+            <Link href="/admin/staff">직원</Link>
             <Link href={`${serviceUrl}/looks`}>고객앱</Link>
           </nav>
         </div>

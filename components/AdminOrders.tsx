@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import { updateFulfillment, assignOrder, openDispute, resolveDispute, setItemIssue, type OrderRow, type Fulfillment } from '@lala/shared/lib/staff-actions';
+import { FULFILLMENT_LABEL as LABEL } from '@lala/shared/lib/fulfillment-label';
 import { getDeliverySlotLabel } from '@lala/shared/lib/delivery';
 import ReturnTrackingAdminForm from './ReturnTrackingAdminForm';
 import PackagingPhotoAdminForm from './PackagingPhotoAdminForm';
@@ -13,11 +14,6 @@ const STATUSES: Fulfillment[] = [
   'ORDERED', 'PRE_INSPECTING', 'READY', 'SHIPPED', 'DELIVERED', 'RETURN_REQUESTED', 'RETURN_INSPECTING', 'REFUNDED',
   'PRE_INSPECT_ISSUE', 'MISDELIVERED', 'RETURN_ISSUE',
 ];
-const LABEL: Record<Fulfillment, string> = {
-  ORDERED: '주문결제', PRE_INSPECTING: '상품검수중', READY: '배송대기중', SHIPPED: '배송중',
-  DELIVERED: '배송완료', RETURN_REQUESTED: '반납접수 요청됨(택배)', RETURN_INSPECTING: '반납검수중', REFUNDED: '완료(환불됨)',
-  PRE_INSPECT_ISSUE: '검수 보류(상품검수)', MISDELIVERED: '오배송', RETURN_ISSUE: '반납 이슈(반납검수)',
-};
 
 export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; staff: { id: string; name: string }[] }) {
   const router = useRouter();
