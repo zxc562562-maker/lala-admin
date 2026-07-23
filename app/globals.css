@@ -195,7 +195,7 @@ body{color:var(--espresso)}
 .order-item-list{display:flex;flex-direction:column;gap:12px}
 .order-item-list-divider{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .order-issue-items{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-.order-item-block{display:flex;flex-direction:column;gap:6px}
+.order-item-block{display:flex;align-items:flex-start;gap:16px}
 .order-item-row{position:relative;display:flex;align-items:center;gap:14px}
 .order-item-response-row{position:absolute;right:0;top:50%;transform:translateY(-50%)}
 .order-item-thumb{width:48px;height:64px;border-radius:2px;flex-shrink:0;object-fit:cover}
@@ -209,7 +209,7 @@ body{color:var(--espresso)}
 .order-item-issue-btn{background:none;border:1px solid var(--line);border-radius:3px;padding:2px 8px;font-size:10.5px;color:var(--espresso);cursor:pointer;font-family:var(--sans);white-space:nowrap}
 .order-item-issue-btn:hover{background:var(--paper)}
 .order-item-issue-btn:disabled{opacity:.5;cursor:default}
-.order-item-issue-row{padding-left:62px}
+.order-item-issue-row{flex-shrink:0}
 .order-item-issue-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .order-item-issue-photos{display:flex;gap:4px}
 .order-item-issue-photo{width:48px;height:64px;object-fit:cover;border-radius:2px;border:1px solid var(--line)}
