@@ -32,6 +32,20 @@ function WheelColumn({ items, value, suffix, onChange }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // 마우스 휠 1회(deltaY≈100)가 그대로 스크롤되면 24px짜리 항목이 4개씩 넘어가버려서
+    // 휠 이벤트를 가로채 정확히 한 칸(WHEEL_ITEM_H)만 이동시킨다. 터치 드래그는 그대로 native scroll 사용.
+    function handleWheel(e: WheelEvent) {
+      e.preventDefault();
+      const dir = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0;
+      if (dir) el?.scrollBy({ top: dir * WHEEL_ITEM_H, behavior: 'smooth' });
+    }
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, []);
+
   function handleScroll() {
     if (settleTimer.current) clearTimeout(settleTimer.current);
     settleTimer.current = setTimeout(() => {
