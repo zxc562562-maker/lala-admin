@@ -210,13 +210,13 @@ body{color:var(--espresso)}
 .order-item-issue-btn:disabled{opacity:.5;cursor:default}
 .order-item-issue-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .order-item-issue-photos{display:flex;gap:4px}
-.order-item-issue-photo{width:32px;height:32px;object-fit:cover;border-radius:3px;border:1px solid var(--line)}
+.order-item-issue-photo{width:43px;height:58px;object-fit:cover;border-radius:2px;border:1px solid var(--line)}
 .order-item-issue-reason{font-size:11px;color:var(--espresso);opacity:.75}
 .order-item-issue-preview-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 /* 패키징 사진 확대 팝업 이미지 */
 .packaging-photo-lightbox-img{max-width:90vw;max-height:85vh;border-radius:6px;object-fit:contain;box-shadow:0 20px 50px rgba(0,0,0,.3)}
 /* 관리자 패키징 사진 업로드 폼의 미리보기/기존 사진 썸네일 */
-.packaging-photo-thumb{width:64px;height:64px;object-fit:cover;border-radius:3px;border:1px solid var(--line);flex-shrink:0}
+.packaging-photo-thumb{width:48px;height:64px;object-fit:cover;border-radius:2px;border:1px solid var(--line);flex-shrink:0}
 .resv-group{position:relative;margin-bottom:16px;border:1px solid var(--line);border-radius:6px;padding:14px 16px;background:#fff}
 .resv-group-link{display:block;text-decoration:none;color:inherit;cursor:pointer;transition:border-color .15s}
 .resv-group-link:hover{border-color:var(--espresso)}
