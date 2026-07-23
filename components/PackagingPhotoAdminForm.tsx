@@ -16,16 +16,12 @@ export default function PackagingPhotoAdminForm({
   const [busy, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
 
+  // 파일 선택 즉시 업로드까지 이어간다 — 버튼 하나로 "선택→업로드"가 끝나게.
   function pick(e: React.ChangeEvent<HTMLInputElement>) {
     setErr(null);
     const file = e.target.files?.[0];
-    setPreview(file ? URL.createObjectURL(file) : null);
-  }
-
-  function upload() {
-    const file = inputRef.current?.files?.[0];
-    if (!file) { setErr('사진을 선택해주세요.'); return; }
-    setErr(null);
+    if (!file) return;
+    setPreview(URL.createObjectURL(file));
     const formData = new FormData();
     formData.set('photo', file);
     startTransition(async () => {
@@ -52,15 +48,15 @@ export default function PackagingPhotoAdminForm({
             className="packaging-photo-thumb"
           />
         )}
-        <input ref={inputRef} type="file" accept="image/*" onChange={pick} disabled={busy} />
+        <input ref={inputRef} type="file" accept="image/*" onChange={pick} disabled={busy} style={{ display: 'none' }} />
         <button
           type="button"
           className="cta ghost"
           style={{ width: 'auto', padding: '8px 14px', fontSize: 12, marginTop: 0 }}
           disabled={busy}
-          onClick={upload}
+          onClick={() => inputRef.current?.click()}
         >
-          {busy ? '업로드 중…' : photoUrl ? '재업로드' : '업로드'}
+          {busy ? '업로드 중…' : photoUrl ? '재업로드' : '사진 선택'}
         </button>
       </div>
       {err && <p className="hint err" style={{ margin: '4px 0 0', minHeight: 0 }}>{err}</p>}
