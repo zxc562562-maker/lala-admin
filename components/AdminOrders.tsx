@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
-import { updateFulfillment, assignOrder, openDispute, resolveDispute, setItemIssue, type OrderRow, type Fulfillment } from '@lala/shared/lib/staff-actions';
+import { updateFulfillment, assignOrder, openDispute, resolveDispute, saveItemIssue, type OrderRow, type Fulfillment } from '@lala/shared/lib/staff-actions';
 import { FULFILLMENT_LABEL as LABEL } from '@lala/shared/lib/fulfillment-label';
 import { getDeliverySlotLabel } from '@lala/shared/lib/delivery';
 import ReturnTrackingAdminForm from './ReturnTrackingAdminForm';
@@ -57,6 +57,11 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
   const [pending, startTransition] = useTransition();
   const [disputeTarget, setDisputeTarget] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState('');
+  const [issueTarget, setIssueTarget] = useState<string | null>(null); // reservation id
+  const [issueReason, setIssueReason] = useState('');
+  const [issuePhotos, setIssuePhotos] = useState<File[]>([]);
+  const [issueErr, setIssueErr] = useState<string | null>(null);
+  const issuePhotoPreviews = useMemo(() => issuePhotos.map((f) => URL.createObjectURL(f)), [issuePhotos]);
   const [dateFilter, setDateFilter] = useState(todayISO());
   const [rangeStart, setRangeStart] = useState('');
   const [rangeEnd, setRangeEnd] = useState('');
@@ -111,8 +116,28 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
   function resolve(orderId: string) {
     startTransition(async () => { await resolveDispute(orderId); router.refresh(); });
   }
-  function toggleIssue(reservationId: string, hasIssue: boolean) {
-    startTransition(async () => { await setItemIssue(reservationId, hasIssue); router.refresh(); });
+  function openIssue(reservationId: string) {
+    setIssueTarget(reservationId);
+    setIssueReason('');
+    setIssuePhotos([]);
+    setIssueErr(null);
+  }
+  function pickIssuePhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    setIssuePhotos(Array.from(e.target.files ?? []).slice(0, 5));
+  }
+  function submitIssue() {
+    if (!issueTarget) return;
+    if (!issueReason.trim()) { setIssueErr('사유를 입력해주세요.'); return; }
+    if (issuePhotos.length === 0) { setIssueErr('사진을 1장 이상 선택해주세요.'); return; }
+    setIssueErr(null);
+    const reservationId = issueTarget;
+    const formData = new FormData();
+    issuePhotos.forEach((f) => formData.append('photos', f));
+    startTransition(async () => {
+      const res = await saveItemIssue(reservationId, issueReason, formData);
+      if (res.ok) { setIssueTarget(null); router.refresh(); }
+      else setIssueErr(res.reason);
+    });
   }
 
   return (
@@ -215,6 +240,21 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                       <div className="order-item-name-row">
                         <span className="order-item-name">{item.productName}</span>
                         <span className="order-item-barcode">{item.barcode ?? demoBarcode(item.id)}</span>
+                        {item.hasIssue ? (
+                          <span className="order-item-issue-info">
+                            <span className="order-item-issue-photos">
+                              {item.issuePhotoUrls.map((url, i) => (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img key={i} src={url} alt="오염·손상 사진" className="order-item-issue-photo" />
+                              ))}
+                            </span>
+                            <span className="order-item-issue-reason">{item.issueReason}</span>
+                          </span>
+                        ) : (
+                          <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openIssue(item.id)}>
+                            오염·손상 발생
+                          </button>
+                        )}
                       </div>
                       <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                     </div>
@@ -228,22 +268,6 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
             )}
 
             <PackagingPhotoAdminForm orderId={o.id} photoUrl={o.packagingPhotoUrl} />
-            {(o.fulfillment === 'PRE_INSPECT_ISSUE' || o.fulfillment === 'RETURN_ISSUE') && o.items.length > 0 && (
-              <div className="order-issue-items">
-                <div className="field-section" style={{ margin: '8px 0 4px' }}>문제 상품 지정 (회원 화면에 해당 상품만 안내 표시)</div>
-                {o.items.map((item) => (
-                  <label key={item.id} className="agree-row" style={{ fontSize: 12 }}>
-                    <input
-                      type="checkbox"
-                      checked={item.hasIssue}
-                      disabled={pending}
-                      onChange={(e) => toggleIssue(item.id, e.target.checked)}
-                    />
-                    <span>{item.productName}</span>
-                  </label>
-                ))}
-              </div>
-            )}
             {o.fulfillment === 'RETURN_REQUESTED' && o.deliveryMethod === 'PARCEL' && (
               <ReturnTrackingAdminForm
                 orderId={o.id}
@@ -271,6 +295,36 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
             <div className="wd-btns">
               <button className="cta ghost" onClick={() => setDisputeTarget(null)}>취소</button>
               <button className="cta" disabled={pending} onClick={submitDispute}>분쟁 지정</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {issueTarget && (
+        <div className="wd-ov" onClick={(e) => e.target === e.currentTarget && setIssueTarget(null)}>
+          <div className="wd-box">
+            <div className="wd-title">오염·손상 발생</div>
+            <p className="wd-desc">사진(최대 5장)과 사유를 남겨주세요.</p>
+            <input type="file" accept="image/*" multiple onChange={pickIssuePhotos} disabled={pending} />
+            {issuePhotoPreviews.length > 0 && (
+              <div className="order-item-issue-preview-row">
+                {issuePhotoPreviews.map((url, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={i} src={url} alt="" className="order-item-issue-photo" />
+                ))}
+              </div>
+            )}
+            <textarea
+              className="pf-input pf-edit"
+              style={{ width: '100%', textAlign: 'left', padding: '10px 12px', minHeight: 70, resize: 'vertical', marginTop: 10 }}
+              placeholder="오염·손상 사유"
+              value={issueReason}
+              onChange={(e) => setIssueReason(e.target.value)}
+            />
+            {issueErr && <p className="hint err">{issueErr}</p>}
+            <div className="wd-btns">
+              <button className="cta ghost" onClick={() => setIssueTarget(null)}>취소</button>
+              <button className="cta" disabled={pending} onClick={submitIssue}>등록</button>
             </div>
           </div>
         </div>
