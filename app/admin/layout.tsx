@@ -17,7 +17,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <nav className="admin-nav">
           <span className="admin-nav-section">주문</span>
           <Link href="/admin">주문 현황</Link>
-          <Link href="/admin/address-log">배송정보 변경</Link>
 
           <span className="admin-nav-section">상품</span>
           <Link href="/admin/products">상품관리</Link>
@@ -25,6 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
           <span className="admin-nav-section">회원</span>
           <Link href="/admin/customers">고객 관리</Link>
+          <Link href="/admin/address-log">배송정보 변경</Link>
           <Link href="/admin/approvals">가입 승인</Link>
 
           <span className="admin-nav-section">운영</span>
