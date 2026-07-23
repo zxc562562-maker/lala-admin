@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import type { InventoryListRow } from '@/lib/product-actions';
 import type { ItemStatus } from '@lala/shared/lib/domain/inventory';
+import BarcodeImage from './BarcodeImage';
 
 const LABEL: Record<ItemStatus, string> = {
   AVAILABLE: '대여가능', RESERVED: '예약됨', RENTED: '대여중', RETURNED: '회수됨',
@@ -80,7 +81,7 @@ export default function AdminInventory({ items }: { items: InventoryListRow[] })
             <tbody>
               {filtered.map((it) => (
                 <tr key={it.id}>
-                  <td>{it.barcode}</td>
+                  <td><BarcodeImage value={it.barcode} /></td>
                   <td className="prod-name">{it.productName}</td>
                   <td>{it.productCategory} · {it.productSize}</td>
                   <td><span>● {LABEL[it.status]}</span></td>

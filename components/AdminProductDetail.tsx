@@ -4,10 +4,10 @@ import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
-import { createInventoryItem, updateInventoryItemStatus, type AdminInventoryItem } from '@/lib/product-actions';
+import { createInventoryItem, updateInventoryItemStatus, type AdminInventoryItem, type AdminProduct } from '@/lib/product-actions';
 import { nextStates } from '@lala/shared/lib/domain/inventory';
 import type { ItemStatus } from '@lala/shared/lib/domain/inventory';
-import type { Product } from '@lala/shared/lib/types';
+import BarcodeImage from './BarcodeImage';
 
 const won = (n: number) => n.toLocaleString('ko-KR') + '원';
 
@@ -16,7 +16,7 @@ const LABEL: Record<ItemStatus, string> = {
   CLEANING: '세탁중', INSPECTING: '검수중', REPAIRING: '수선중', RETIRED: '폐기',
 };
 
-export default function AdminProductDetail({ product, items }: { product: Product; items: AdminInventoryItem[] }) {
+export default function AdminProductDetail({ product, items }: { product: AdminProduct; items: AdminInventoryItem[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export default function AdminProductDetail({ product, items }: { product: Produc
         <div>
           <div className="prod-name">{product.name}</div>
         </div>
-        <div className="prod-brand">{product.category} · {product.size}</div>
+        <div className="prod-brand">{product.category} · {product.size} · {product.colorName || '색상명 미등록'}</div>
         <div className="admin-spacer" />
         <div className="prod-brand">일 대여료 <b style={{ color: 'var(--espresso)' }}>{won(product.dailyPrice)}</b></div>
         <div className="prod-brand">보증금 <b style={{ color: 'var(--espresso)' }}>{won(product.deposit)}</b></div>
@@ -92,7 +92,7 @@ export default function AdminProductDetail({ product, items }: { product: Produc
                 const rowBusy = pending && busyId === it.id;
                 return (
                   <tr key={it.id}>
-                    <td>{it.barcode}</td>
+                    <td><BarcodeImage value={it.barcode} /></td>
                     <td><span style={{ fontSize: 12.5 }}>● {LABEL[it.status]}</span></td>
                     <td className="num">{it.condition}</td>
                     <td className="num">{it.rentalCount}</td>

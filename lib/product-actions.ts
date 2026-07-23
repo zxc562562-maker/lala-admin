@@ -6,14 +6,18 @@ import { getAccess } from '@lala/shared/lib/roles';
 import { canTransition, type ItemStatus } from '@lala/shared/lib/domain/inventory';
 import type { Product } from '@lala/shared/lib/types';
 
-const PRODUCT_SELECT = 'id,name,brand,category,size,daily_price,deposit,color_1,color_2';
+const PRODUCT_SELECT = 'id,name,brand,category,size,color_name,daily_price,deposit,color_1,color_2';
+
+/** service 앱과 공유하는 Product 타입엔 없는 색상명(바코드 생성용, 영문)을 admin 전용으로 얹은 타입. */
+export interface AdminProduct extends Product { colorName: string | null }
 
 function mapProduct(r: {
-  id: string; name: string; brand: string | null; category: string; size: string;
+  id: string; name: string; brand: string | null; category: string; size: string; color_name: string | null;
   daily_price: number; deposit: number; color_1: string | null; color_2: string | null;
-}): Product {
+}): AdminProduct {
   return {
     id: r.id, name: r.name, brand: r.brand ?? '', category: r.category, size: r.size,
+    colorName: r.color_name,
     dailyPrice: r.daily_price, deposit: r.deposit,
     c1: r.color_1 ?? '#3B2230', c2: r.color_2 ?? '#6B2737',
   };
@@ -37,7 +41,7 @@ function mapItem(r: {
   };
 }
 
-export interface ProductRow extends Product { itemCount: number; barcodes: string[] }
+export interface ProductRow extends AdminProduct { itemCount: number; barcodes: string[] }
 
 /** 상품 목록 (재고 개체 수·바코드 목록 포함) */
 export async function listProducts(): Promise<ProductRow[]> {
@@ -58,7 +62,7 @@ export async function listProducts(): Promise<ProductRow[]> {
   }));
 }
 
-export async function getProduct(id: string): Promise<Product | null> {
+export async function getProduct(id: string): Promise<AdminProduct | null> {
   const me = await getAccess();
   if (!me?.isApprover) return null;
 
@@ -70,8 +74,10 @@ export async function getProduct(id: string): Promise<Product | null> {
 
 // 브랜드는 관리 대상에서 제외 — 신규 상품엔 값을 넣지 않고(기존 값 있는 상품도 수정 시 손대지 않음),
 // service 앱은 여전히 Product.brand를 표시하므로 컬럼/타입 자체는 그대로 둔다.
+// colorName은 바코드 값(카테고리 접두어+등록일자+컬러+사이즈) 생성에 쓰이는 색상명 — Code128은
+// ASCII만 인코딩 가능하므로 영문/숫자로 입력받는다.
 export interface ProductInput {
-  name: string; category: string; size: string; dailyPrice: number; deposit: number; c1: string; c2: string;
+  name: string; category: string; size: string; colorName: string; dailyPrice: number; deposit: number; c1: string; c2: string;
 }
 
 export async function createProduct(input: ProductInput): Promise<{ ok: boolean; reason?: string; id?: string }> {
@@ -80,7 +86,7 @@ export async function createProduct(input: ProductInput): Promise<{ ok: boolean;
 
   const sb = supabaseAdmin();
   const { data, error } = await sb.from('product').insert({
-    name: input.name, category: input.category, size: input.size,
+    name: input.name, category: input.category, size: input.size, color_name: input.colorName.trim() || null,
     daily_price: input.dailyPrice, deposit: input.deposit, color_1: input.c1, color_2: input.c2,
   }).select('id').single();
   if (error) return { ok: false, reason: '이미 같은 이름·사이즈의 상품이 있거나 저장에 실패했어요.' };
@@ -95,7 +101,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<{ 
 
   const sb = supabaseAdmin();
   const { error } = await sb.from('product').update({
-    name: input.name, category: input.category, size: input.size,
+    name: input.name, category: input.category, size: input.size, color_name: input.colorName.trim() || null,
     daily_price: input.dailyPrice, deposit: input.deposit, color_1: input.c1, color_2: input.c2,
   }).eq('id', id);
   if (error) return { ok: false, reason: '저장에 실패했어요.' };
@@ -117,23 +123,55 @@ export async function listInventoryItemsForProduct(productId: string): Promise<A
   return data.map(mapItem);
 }
 
-function generateBarcode(): string {
-  const digits = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
-  return `LALA-${digits}`;
+// 카테고리별 Code128 바코드 접두어. 목록에 없는 카테고리는 일반 접두어(PR)로 대체.
+const CATEGORY_PREFIX: Record<string, string> = {
+  '자켓': 'JK', '블라우스': 'BL', '치마': 'SK', '원피스': 'DR', '구두': 'HE', '백': 'BA',
+};
+function categoryPrefix(category: string): string {
+  return CATEGORY_PREFIX[category] ?? 'PR';
+}
+
+function pad2(n: number): string { return String(n).padStart(2, '0'); }
+function todayCompact(): string {
+  const d = new Date();
+  return `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}`;
+}
+// Code128은 ASCII만 인코딩 가능 — 색상명·사이즈에 남아있을 수 있는 특수문자/공백/비영문을 제거.
+function sanitizeForBarcode(s: string): string {
+  return s.trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || 'NA';
+}
+
+/**
+ * 바코드 값: {카테고리 접두어}{등록일자YYYYMMDD}-{컬러}-{사이즈}-{순번}.
+ * 순번은 같은 상품에 같은 날 여러 개체를 추가할 때(치수·컬러가 같아 나머지가 겹치는 경우) 구분용.
+ */
+function buildBarcodeValue(category: string, colorName: string, size: string, seq: number): string {
+  const prefix = categoryPrefix(category);
+  const date = todayCompact();
+  const color = sanitizeForBarcode(colorName);
+  const sz = sanitizeForBarcode(size);
+  return `${prefix}${date}-${color}-${sz}-${pad2(seq)}`;
 }
 
 /**
  * 같은 상품이라도 실물이 여러 벌이면(사이즈별 컨디션·대여현황을 따로 추적해야 하니) 재고 개체마다
  * 고유 바코드가 필요함 — 수기 입력은 오탈자/중복 위험이 있어 서버에서 자동 생성한다.
- * unique 충돌(23505) 시에만 새 코드로 재시도, 그 외 오류는 바로 실패 처리.
+ * unique 충돌(23505) 시엔 순번을 올려 재시도, 그 외 오류는 바로 실패 처리.
  */
 export async function createInventoryItem(productId: string): Promise<{ ok: true; barcode: string } | { ok: false; reason: string }> {
   const me = await getAccess();
   if (!me?.isApprover) return { ok: false, reason: '권한이 없습니다.' };
 
   const sb = supabaseAdmin();
+  const { data: product, error: pErr } = await sb.from('product').select('category,color_name,size').eq('id', productId).maybeSingle();
+  if (pErr || !product) return { ok: false, reason: '상품을 찾을 수 없습니다.' };
+  if (!product.color_name?.trim()) return { ok: false, reason: '상품에 색상명이 등록되어 있지 않아요. 상품 정보를 먼저 수정해주세요.' };
+
+  const { count } = await sb.from('inventory_item').select('id', { count: 'exact', head: true }).eq('product_id', productId);
+  let seq = (count ?? 0) + 1;
+
   for (let attempt = 0; attempt < 5; attempt++) {
-    const barcode = generateBarcode();
+    const barcode = buildBarcodeValue(product.category, product.color_name, product.size, seq);
     const { error } = await sb.from('inventory_item').insert({ product_id: productId, barcode, status: 'AVAILABLE' });
     if (!error) {
       revalidatePath(`/admin/products/${productId}`);
@@ -141,6 +179,7 @@ export async function createInventoryItem(productId: string): Promise<{ ok: true
       return { ok: true, barcode };
     }
     if (error.code !== '23505') return { ok: false, reason: '저장에 실패했어요.' };
+    seq++;
   }
   return { ok: false, reason: '바코드 생성에 실패했어요. 다시 시도해주세요.' };
 }

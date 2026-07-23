@@ -9,7 +9,7 @@ import { createProduct, updateProduct, type ProductRow, type ProductInput } from
 const won = (n: number) => n.toLocaleString('ko-KR') + '원';
 
 const EMPTY_FORM: ProductInput = {
-  name: '', category: '', size: '', dailyPrice: 0, deposit: 0, c1: '#3B2230', c2: '#6B2737',
+  name: '', category: '', size: '', colorName: '', dailyPrice: 0, deposit: 0, c1: '#3B2230', c2: '#6B2737',
 };
 
 export default function AdminProducts({ products }: { products: ProductRow[] }) {
@@ -55,7 +55,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
 
   function openEdit(p: ProductRow) {
     setEditingId(p.id);
-    setForm({ name: p.name, category: p.category, size: p.size, dailyPrice: p.dailyPrice, deposit: p.deposit, c1: p.c1, c2: p.c2 });
+    setForm({ name: p.name, category: p.category, size: p.size, colorName: p.colorName ?? '', dailyPrice: p.dailyPrice, deposit: p.deposit, c1: p.c1, c2: p.c2 });
     setFormError(null);
     setDrawerOpen(true);
   }
@@ -151,6 +151,10 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
                 <label>사이즈</label>
                 <input className="field" value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} />
               </div>
+            </div>
+            <div className="field-group">
+              <label>색상명 (영문, 바코드용 — 예: BLACK)</label>
+              <input className="field" value={form.colorName} onChange={(e) => setForm({ ...form, colorName: e.target.value })} />
             </div>
             <div className="drawer-row">
               <div className="field-group">
