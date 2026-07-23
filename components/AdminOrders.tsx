@@ -142,8 +142,11 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                   <span className="order-period">{o.checkout} → {o.return}</span>
                   <span className="pill">{rentalDays(o.checkout, o.return)}일</span>
                   {deliveryMethodLabel(o.deliveryMethod) && <span className="pill">{deliveryMethodLabel(o.deliveryMethod)}</span>}
-                  {/* 택배는 시간 지정 개념이 없어서(도착 시간을 고를 수 없음) 이 경우엔 "미지정"이 떠도 의미가 없다 */}
-                  {o.deliveryMethod !== 'PARCEL' && <span className="pill">{getDeliverySlotLabel(o.deliverySlot)}</span>}
+                  {/* 배송시간은 직배송/퀵배송에서만 의미가 있다(택배는 시간 지정 자체가 없고,
+                      배송방법이 아직 안 정해졌으면 시간도 당연히 의미가 없다 — 방법이 시간보다 선행) */}
+                  {(o.deliveryMethod === 'DIRECT' || o.deliveryMethod === 'QUICK') && (
+                    <span className="pill">{getDeliverySlotLabel(o.deliverySlot)}</span>
+                  )}
                 </span>
                 {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
               </span>
