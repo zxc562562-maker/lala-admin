@@ -199,21 +199,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                   {o.deliveryAddress && <span className="order-cust-sub">{o.deliveryAddress}</span>}
                   {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
                 </span>
-                <span className="order-amt-col">
-                  <span className="order-amt">{won(o.amount)}</span>
-                  <span className="order-dispute-action-row">
-                    {o.disputed && o.disputeReason && <span className="order-dispute-reason-inline">사유: {o.disputeReason}</span>}
-                    {o.disputed ? (
-                      <button className="cta" disabled={pending} onClick={() => resolve(o.id)} style={{ margin: 0, width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
-                        분쟁 해결
-                      </button>
-                    ) : (
-                      <button className="cta" disabled={pending} onClick={() => setDisputeTarget(o.id)} style={{ margin: 0, width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
-                        분쟁 지정
-                      </button>
-                    )}
-                  </span>
-                </span>
+                <span className="order-amt">{won(o.amount)}</span>
               </div>
 
               <span className="order-period-group">
@@ -276,6 +262,18 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                     <option value="">미배정</option>
                     {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
+                </span>
+                <span className="order-inline-ctrl">
+                  {o.disputed && o.disputeReason && <span className="order-dispute-reason-inline">사유: {o.disputeReason}</span>}
+                  {o.disputed ? (
+                    <button className="cta" disabled={pending} onClick={() => resolve(o.id)} style={{ margin: 0, width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
+                      분쟁 해결
+                    </button>
+                  ) : (
+                    <button className="cta" disabled={pending} onClick={() => setDisputeTarget(o.id)} style={{ margin: 0, width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
+                      분쟁 지정
+                    </button>
+                  )}
                 </span>
               </span>
             </div>
