@@ -263,7 +263,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                     {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </span>
-                <span className="order-inline-ctrl">
+                <span className="order-inline-ctrl order-inline-ctrl-end">
                   {o.disputed && o.disputeReason && <span className="order-dispute-reason-inline">사유: {o.disputeReason}</span>}
                   {o.disputed ? (
                     <button className="cta" disabled={pending} onClick={() => resolve(o.id)} style={{ margin: 0, width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>

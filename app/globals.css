@@ -378,7 +378,8 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .order-sub-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
 .order-inline-ctrl{display:inline-flex;align-items:center;gap:4px;margin-left:4px}
 .order-inline-ctrl>span:first-child{font-size:11px;color:var(--espresso);opacity:.7;flex-shrink:0}
-.order-ctrl-label-wide{letter-spacing:.1em}
+.order-inline-ctrl-end{margin-left:auto}
+.order-ctrl-label-wide{letter-spacing:.5em}
 .order-ctrl-divider{width:1px;height:16px;background:var(--line);flex-shrink:0;margin:0 2px}
 .order-inline-select{font-family:var(--sans);font-size:12px;padding:4px 6px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--espresso)}
 .order-status-btns{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
