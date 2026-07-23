@@ -17,6 +17,16 @@ const STATUSES: Fulfillment[] = [
 // 정상 흐름 중간에 끼어드는 오류 분기 — 진행 상태와 섞어놓으면 헷갈려서 별도 select로 분리.
 const ISSUE_STATUSES: Fulfillment[] = ['PRE_INSPECT_ISSUE', 'MISDELIVERED', 'RETURN_ISSUE'];
 
+/** 현재 상태부터 그 이후 버튼만 남기고, 이미 지난 단계는 자동으로 숨긴다. 오류 상태 등 흐름 밖이면 전체를 보여준다. */
+function visibleStatuses(current: Fulfillment): Fulfillment[] {
+  const idx = STATUSES.indexOf(current);
+  return STATUSES.filter((_, i) => i >= Math.max(idx, 0));
+}
+/** 되돌리기는 정상 흐름의 두 번째 단계부터만 의미가 있다(첫 단계는 되돌릴 이전 단계가 없음). */
+function canUndoStatus(current: Fulfillment): boolean {
+  return STATUSES.indexOf(current) > 0;
+}
+
 function todayISO(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -100,6 +110,11 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
 
   function setStatus(id: string, s: Fulfillment) {
     startTransition(async () => { await updateFulfillment(id, s); router.refresh(); });
+  }
+  function undoStatus(id: string, current: Fulfillment) {
+    const idx = STATUSES.indexOf(current);
+    if (idx <= 0) return;
+    setStatus(id, STATUSES[idx - 1]);
   }
   function assign(id: string, staffId: string) {
     startTransition(async () => { await assignOrder(id, staffId); router.refresh(); });
@@ -198,10 +213,28 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                 )}
                 <span className="order-inline-ctrl">
                   <span>상태</span>
-                  <select className="order-inline-select" value={STATUSES.includes(o.fulfillment) ? o.fulfillment : ''} disabled={pending} onChange={(e) => setStatus(o.id, e.target.value as Fulfillment)}>
-                    <option value="" disabled>선택</option>
-                    {STATUSES.map((s) => <option key={s} value={s}>{LABEL[s]}</option>)}
-                  </select>
+                  <span className="order-status-btns">
+                    {visibleStatuses(o.fulfillment).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        className={`order-status-btn${s === o.fulfillment ? ' active' : ''}`}
+                        disabled={pending}
+                        onClick={() => setStatus(o.id, s)}
+                      >
+                        {LABEL[s]}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className="order-status-undo"
+                      title="이전 상태로 되돌리기"
+                      disabled={pending || !canUndoStatus(o.fulfillment)}
+                      onClick={() => undoStatus(o.id, o.fulfillment)}
+                    >
+                      ↺
+                    </button>
+                  </span>
                 </span>
                 <span className="order-inline-ctrl">
                   <span>오류</span>
