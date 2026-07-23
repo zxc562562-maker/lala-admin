@@ -56,7 +56,7 @@ export default function PackagingPhotoAdminForm({
           disabled={busy}
           onClick={() => inputRef.current?.click()}
         >
-          {busy ? '업로드 중…' : photoUrl ? '재업로드' : '사진 선택'}
+          {busy ? '업로드 중…' : photoUrl ? '재업로드' : '업로드'}
         </button>
       </div>
       {err && <p className="hint err" style={{ margin: '4px 0 0', minHeight: 0 }}>{err}</p>}
