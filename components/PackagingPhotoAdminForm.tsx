@@ -42,8 +42,8 @@ export default function PackagingPhotoAdminForm({
 
   return (
     <div className="order-issue-items">
+      <div className="field-section" style={{ margin: '0 0 8px' }}>패키징 완료 사진 (회원에게 안내됨)</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <span className="field-section" style={{ margin: 0, flexShrink: 0 }}>패키징 완료 사진 (회원에게 안내됨)</span>
         {(preview || photoUrl) && (
           // eslint-disable-next-line @next/next/no-img-element
           <img

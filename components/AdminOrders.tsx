@@ -280,6 +280,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
 
             {o.items.length > 0 && (
               <div className="order-item-list order-item-list-divider">
+                <div className="field-section" style={{ margin: '0 0 8px' }}>주문 상품 목록</div>
                 {o.items.map((item) => (
                   <div className="order-item-row" key={item.id}>
                     <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${item.c2}, ${item.c1})` }} />
