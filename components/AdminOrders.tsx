@@ -288,22 +288,23 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                       <div className="order-item-name-row">
                         <span className="order-item-name">{item.productName}</span>
                         <span className="order-item-barcode">{item.barcode ?? demoBarcode(item.id)}</span>
-                        {item.hasIssue ? (
-                          <span className="order-item-issue-info">
-                            <span className="order-item-issue-photos">
-                              {item.issuePhotoUrls.map((url, i) => (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img key={i} src={url} alt="오염·손상 사진" className="order-item-issue-photo" />
-                              ))}
-                            </span>
-                            <span className="order-item-issue-reason">{item.issueReason}</span>
-                          </span>
-                        ) : (
+                        {!item.hasIssue && (
                           <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openIssue(item.id)}>
                             오염·손상 발생
                           </button>
                         )}
                       </div>
+                      {item.hasIssue && (
+                        <div className="order-item-issue-info">
+                          <span className="order-item-issue-photos">
+                            {item.issuePhotoUrls.map((url, i) => (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img key={i} src={url} alt="오염·손상 사진" className="order-item-issue-photo" />
+                            ))}
+                          </span>
+                          <span className="order-item-issue-reason">{item.issueReason}</span>
+                        </div>
+                      )}
                       <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                     </div>
                   </div>

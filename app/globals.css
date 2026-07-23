@@ -208,7 +208,7 @@ body{color:var(--espresso)}
 .order-item-issue-btn{background:none;border:1px solid var(--line);border-radius:3px;padding:2px 8px;font-size:10.5px;color:var(--espresso);cursor:pointer;font-family:var(--sans);white-space:nowrap}
 .order-item-issue-btn:hover{background:var(--paper)}
 .order-item-issue-btn:disabled{opacity:.5;cursor:default}
-.order-item-issue-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.order-item-issue-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
 .order-item-issue-photos{display:flex;gap:4px}
 .order-item-issue-photo{width:48px;height:64px;object-fit:cover;border-radius:2px;border:1px solid var(--line)}
 .order-item-issue-reason{font-size:11px;color:var(--espresso);opacity:.75}
