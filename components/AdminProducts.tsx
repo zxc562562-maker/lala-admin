@@ -9,7 +9,7 @@ import { createProduct, updateProduct, type ProductRow, type ProductInput } from
 const won = (n: number) => n.toLocaleString('ko-KR') + '원';
 
 const EMPTY_FORM: ProductInput = {
-  name: '', brand: '', category: '', size: '', dailyPrice: 0, deposit: 0, c1: '#3B2230', c2: '#6B2737',
+  name: '', category: '', size: '', dailyPrice: 0, deposit: 0, c1: '#3B2230', c2: '#6B2737',
 };
 
 export default function AdminProducts({ products }: { products: ProductRow[] }) {
@@ -41,7 +41,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
     return products.filter((p) => {
       const matchesCategory = category === '전체' || p.category === category;
       const q = query.trim().toLowerCase();
-      const matchesQuery = !q || p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q);
+      const matchesQuery = !q || p.name.toLowerCase().includes(q) || p.barcodes.some((b) => b.toLowerCase().includes(q));
       return matchesCategory && matchesQuery;
     });
   }, [products, query, category]);
@@ -55,7 +55,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
 
   function openEdit(p: ProductRow) {
     setEditingId(p.id);
-    setForm({ name: p.name, brand: p.brand, category: p.category, size: p.size, dailyPrice: p.dailyPrice, deposit: p.deposit, c1: p.c1, c2: p.c2 });
+    setForm({ name: p.name, category: p.category, size: p.size, dailyPrice: p.dailyPrice, deposit: p.deposit, c1: p.c1, c2: p.c2 });
     setFormError(null);
     setDrawerOpen(true);
   }
@@ -86,7 +86,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
       </div>
 
       <div className="admin-toolbar">
-        <input className="admin-search" placeholder="상품명 · 브랜드 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input className="admin-search" placeholder="상품명 · 바코드 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
         <select className="admin-select-filter" value={category} onChange={(e) => setCategory(e.target.value)}>
           {categories.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -116,7 +116,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
                   </td>
                   <td>
                     <Link href={`/admin/products/${p.id}`} className="prod-name" style={{ textDecoration: 'none' }}>{p.name}</Link>
-                    {p.brand && <div className="prod-brand">{p.brand}</div>}
+                    {p.barcodes.length > 0 && <div className="prod-brand prod-barcodes">{p.barcodes.join(', ')}</div>}
                   </td>
                   <td>{p.category}</td>
                   <td>{p.size}</td>
@@ -141,10 +141,6 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
             <div className="field-group">
               <label>상품명</label>
               <input className="field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            </div>
-            <div className="field-group">
-              <label>브랜드</label>
-              <input className="field" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
             </div>
             <div className="drawer-row">
               <div className="field-group">

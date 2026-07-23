@@ -37,9 +37,9 @@ function mapItem(r: {
   };
 }
 
-export interface ProductRow extends Product { itemCount: number }
+export interface ProductRow extends Product { itemCount: number; barcodes: string[] }
 
-/** 상품 목록 (재고 개체 수 포함) */
+/** 상품 목록 (재고 개체 수·바코드 목록 포함) */
 export async function listProducts(): Promise<ProductRow[]> {
   const me = await getAccess();
   if (!me?.isApprover) return [];
@@ -47,13 +47,14 @@ export async function listProducts(): Promise<ProductRow[]> {
   const sb = supabaseAdmin();
   const { data, error } = await sb
     .from('product')
-    .select(`${PRODUCT_SELECT},inventory_item(count)`)
+    .select(`${PRODUCT_SELECT},inventory_item(barcode)`)
     .order('created_at', { ascending: false });
   if (error || !data) return [];
 
-  return (data as unknown as Array<Parameters<typeof mapProduct>[0] & { inventory_item: { count: number }[] }>).map((r) => ({
+  return (data as unknown as Array<Parameters<typeof mapProduct>[0] & { inventory_item: { barcode: string }[] }>).map((r) => ({
     ...mapProduct(r),
-    itemCount: r.inventory_item?.[0]?.count ?? 0,
+    itemCount: r.inventory_item?.length ?? 0,
+    barcodes: (r.inventory_item ?? []).map((i) => i.barcode),
   }));
 }
 
@@ -67,8 +68,10 @@ export async function getProduct(id: string): Promise<Product | null> {
   return mapProduct(data);
 }
 
+// 브랜드는 관리 대상에서 제외 — 신규 상품엔 값을 넣지 않고(기존 값 있는 상품도 수정 시 손대지 않음),
+// service 앱은 여전히 Product.brand를 표시하므로 컬럼/타입 자체는 그대로 둔다.
 export interface ProductInput {
-  name: string; brand: string; category: string; size: string; dailyPrice: number; deposit: number; c1: string; c2: string;
+  name: string; category: string; size: string; dailyPrice: number; deposit: number; c1: string; c2: string;
 }
 
 export async function createProduct(input: ProductInput): Promise<{ ok: boolean; reason?: string; id?: string }> {
@@ -77,7 +80,7 @@ export async function createProduct(input: ProductInput): Promise<{ ok: boolean;
 
   const sb = supabaseAdmin();
   const { data, error } = await sb.from('product').insert({
-    name: input.name, brand: input.brand || null, category: input.category, size: input.size,
+    name: input.name, category: input.category, size: input.size,
     daily_price: input.dailyPrice, deposit: input.deposit, color_1: input.c1, color_2: input.c2,
   }).select('id').single();
   if (error) return { ok: false, reason: '이미 같은 이름·사이즈의 상품이 있거나 저장에 실패했어요.' };
@@ -92,7 +95,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<{ 
 
   const sb = supabaseAdmin();
   const { error } = await sb.from('product').update({
-    name: input.name, brand: input.brand || null, category: input.category, size: input.size,
+    name: input.name, category: input.category, size: input.size,
     daily_price: input.dailyPrice, deposit: input.deposit, color_1: input.c1, color_2: input.c2,
   }).eq('id', id);
   if (error) return { ok: false, reason: '저장에 실패했어요.' };
@@ -114,20 +117,32 @@ export async function listInventoryItemsForProduct(productId: string): Promise<A
   return data.map(mapItem);
 }
 
-export async function createInventoryItem(productId: string, barcode: string): Promise<{ ok: boolean; reason?: string }> {
+function generateBarcode(): string {
+  const digits = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+  return `LALA-${digits}`;
+}
+
+/**
+ * 같은 상품이라도 실물이 여러 벌이면(사이즈별 컨디션·대여현황을 따로 추적해야 하니) 재고 개체마다
+ * 고유 바코드가 필요함 — 수기 입력은 오탈자/중복 위험이 있어 서버에서 자동 생성한다.
+ * unique 충돌(23505) 시에만 새 코드로 재시도, 그 외 오류는 바로 실패 처리.
+ */
+export async function createInventoryItem(productId: string): Promise<{ ok: true; barcode: string } | { ok: false; reason: string }> {
   const me = await getAccess();
   if (!me?.isApprover) return { ok: false, reason: '권한이 없습니다.' };
-  if (!barcode.trim()) return { ok: false, reason: '바코드를 입력해주세요.' };
 
   const sb = supabaseAdmin();
-  const { error } = await sb.from('inventory_item').insert({
-    product_id: productId, barcode: barcode.trim(), status: 'AVAILABLE',
-  });
-  if (error) return { ok: false, reason: '이미 같은 바코드가 있거나 저장에 실패했어요.' };
-
-  revalidatePath(`/admin/products/${productId}`);
-  revalidatePath('/admin/inventory');
-  return { ok: true };
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const barcode = generateBarcode();
+    const { error } = await sb.from('inventory_item').insert({ product_id: productId, barcode, status: 'AVAILABLE' });
+    if (!error) {
+      revalidatePath(`/admin/products/${productId}`);
+      revalidatePath('/admin/inventory');
+      return { ok: true, barcode };
+    }
+    if (error.code !== '23505') return { ok: false, reason: '저장에 실패했어요.' };
+  }
+  return { ok: false, reason: '바코드 생성에 실패했어요. 다시 시도해주세요.' };
 }
 
 export async function updateInventoryItemStatus(itemId: string, to: ItemStatus): Promise<{ ok: boolean; reason?: string }> {

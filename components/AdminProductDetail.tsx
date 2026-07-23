@@ -20,7 +20,6 @@ export default function AdminProductDetail({ product, items }: { product: Produc
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [barcode, setBarcode] = useState('');
   const [addError, setAddError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,12 +32,10 @@ export default function AdminProductDetail({ product, items }: { product: Produc
   }, [router, product.id]);
 
   function addItem() {
-    if (!barcode.trim()) { setAddError('바코드를 입력해주세요.'); return; }
     setAddError(null);
     startTransition(async () => {
-      const result = await createInventoryItem(product.id, barcode);
+      const result = await createInventoryItem(product.id);
       if (!result.ok) { setAddError(result.reason ?? '추가에 실패했습니다.'); return; }
-      setBarcode('');
       router.refresh();
     });
   }
@@ -61,8 +58,7 @@ export default function AdminProductDetail({ product, items }: { product: Produc
           <h1 className="staff-title" style={{ marginTop: 6 }}>{product.name} <span className="rt-dot" title="실시간 연결됨">●</span></h1>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input className="admin-search" style={{ minWidth: 160 }} placeholder="새 바코드" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
-          <button className="btn-primary" onClick={addItem} disabled={pending}>{pending && !busyId ? '추가 중…' : '+ 개체 추가'}</button>
+          <button className="btn-primary" onClick={addItem} disabled={pending}>{pending && !busyId ? '추가 중…' : '+ 개체 추가 (바코드 자동생성)'}</button>
         </div>
       </div>
       {addError && <p style={{ fontSize: 12, marginTop: -12, marginBottom: 12 }}>{addError}</p>}
@@ -74,7 +70,6 @@ export default function AdminProductDetail({ product, items }: { product: Produc
         </span>
         <div>
           <div className="prod-name">{product.name}</div>
-          <div className="prod-brand">{product.brand || '—'}</div>
         </div>
         <div className="prod-brand">{product.category} · {product.size}</div>
         <div className="admin-spacer" />
@@ -84,7 +79,7 @@ export default function AdminProductDetail({ product, items }: { product: Produc
       </div>
 
       {items.length === 0 ? (
-        <p className="staff-empty">등록된 재고 개체가 없습니다. 바코드를 입력하고 "개체 추가"로 첫 개체를 만들어보세요.</p>
+        <p className="staff-empty">등록된 재고 개체가 없습니다. "개체 추가"로 첫 개체를 만들어보세요.</p>
       ) : (
         <div className="dtable-wrap">
           <table className="dtable">
