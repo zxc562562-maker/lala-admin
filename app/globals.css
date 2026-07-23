@@ -195,7 +195,7 @@ body{color:var(--espresso)}
 .order-item-list{display:flex;flex-direction:column;gap:12px}
 .order-item-list-divider{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .order-issue-items{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-.order-item-row{position:relative;display:flex;align-items:center;gap:14px}
+.order-item-row{position:relative;display:flex;align-items:flex-start;gap:14px}
 .order-item-response-row{position:absolute;right:0;top:50%;transform:translateY(-50%)}
 .order-item-thumb{width:48px;height:64px;border-radius:2px;flex-shrink:0;object-fit:cover}
 /* 주문 상품 썸네일(상품 상세로 이동)·패키징 사진 썸네일(확대 팝업) 공통 클릭 래퍼 — a/button 기본 스타일 제거 */
