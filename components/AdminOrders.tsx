@@ -173,6 +173,17 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                       {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                   </span>
+                  <span className="order-inline-ctrl">
+                    {o.disputed ? (
+                      <button className="cta ghost" disabled={pending} onClick={() => resolve(o.id)} style={{ width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
+                        분쟁 해결 처리
+                      </button>
+                    ) : (
+                      <button className="linklike" disabled={pending} onClick={() => setDisputeTarget(o.id)} style={{ fontSize: 11.5 }}>
+                        분쟁 지정
+                      </button>
+                    )}
+                  </span>
                 </span>
                 {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
               </span>
@@ -224,17 +235,6 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                 initialTrackingNumber={o.returnTrackingNumber ?? ''}
               />
             )}
-            <div className="order-dispute-ctrl">
-              {o.disputed ? (
-                <button className="cta ghost" disabled={pending} onClick={() => resolve(o.id)} style={{ width: 'auto', padding: '8px 14px', fontSize: 12 }}>
-                  분쟁 해결 처리
-                </button>
-              ) : (
-                <button className="linklike" disabled={pending} onClick={() => setDisputeTarget(o.id)} style={{ fontSize: 12 }}>
-                  분쟁 지정
-                </button>
-              )}
-            </div>
           </div>
         ))}
       </div>
