@@ -225,7 +225,9 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                 {(o.deliveryMethod === 'DIRECT' || o.deliveryMethod === 'QUICK') && (
                   <span className="pill">{shortSlotLabel(o.deliverySlot)}</span>
                 )}
-                <span className="order-ctrl-divider" />
+              </span>
+
+              <span className="order-ctrl-group">
                 <span className="order-inline-ctrl">
                   <span className="order-ctrl-label-wide">상태</span>
                   <span className="order-status-btns">
