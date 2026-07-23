@@ -190,15 +190,16 @@ body{color:var(--espresso)}
 .product-action-row .li-row .size-chip-row{flex:none}
 .order-detail-plain .row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:13px}
 .order-item-list{display:flex;flex-direction:column;gap:12px}
+.order-item-list-divider{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .order-item-row{position:relative;display:flex;align-items:center;gap:14px}
 .order-item-response-row{position:absolute;right:0;top:50%;transform:translateY(-50%)}
 .order-item-thumb{width:48px;height:64px;border-radius:2px;flex-shrink:0;object-fit:cover}
 /* 주문 상품 썸네일(상품 상세로 이동)·패키징 사진 썸네일(확대 팝업) 공통 클릭 래퍼 — a/button 기본 스타일 제거 */
 .order-item-thumb-link{display:block;flex-shrink:0;border:none;background:none;padding:0;cursor:pointer;line-height:0}
 .order-item-info{flex:1;min-width:0}
-.order-item-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.order-item-name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .order-item-name{font-size:13px;font-weight:500;color:var(--espresso)}
-.order-item-barcode{font-family:monospace;font-size:10.5px;color:var(--espresso);opacity:.5;letter-spacing:.02em;flex-shrink:0}
+.order-item-barcode{font-family:monospace;font-size:10.5px;color:var(--espresso);opacity:.5;letter-spacing:.02em}
 .order-item-price{font-size:12.5px;color:var(--espresso);opacity:.65;margin-top:2px}
 /* 패키징 사진 확대 팝업 이미지 */
 .packaging-photo-lightbox-img{max-width:90vw;max-height:85vh;border-radius:6px;object-fit:contain;box-shadow:0 20px 50px rgba(0,0,0,.3)}

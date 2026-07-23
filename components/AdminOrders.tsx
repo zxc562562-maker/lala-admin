@@ -142,18 +142,15 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                   <span className="order-period">{o.checkout} → {o.return}</span>
                   <span className="pill">{rentalDays(o.checkout, o.return)}일</span>
                   {deliveryMethodLabel(o.deliveryMethod) && <span className="pill">{deliveryMethodLabel(o.deliveryMethod)}</span>}
+                  <span className="pill">{getDeliverySlotLabel(o.deliverySlot)}</span>
                 </span>
                 {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
               </span>
               <span className="order-amt">{won(o.amount)}</span>
             </div>
 
-            <div className="order-sub-row">
-              <span className="pill">{getDeliverySlotLabel(o.deliverySlot)}</span>
-            </div>
-
             {o.items.length > 0 && (
-              <div className="order-item-list" style={{ marginTop: 10 }}>
+              <div className="order-item-list order-item-list-divider">
                 {o.items.map((item) => (
                   <div className="order-item-row" key={item.id}>
                     <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${item.c2}, ${item.c1})` }} />
