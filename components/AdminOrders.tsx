@@ -142,7 +142,8 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                   <span className="order-period">{o.checkout} → {o.return}</span>
                   <span className="pill">{rentalDays(o.checkout, o.return)}일</span>
                   {deliveryMethodLabel(o.deliveryMethod) && <span className="pill">{deliveryMethodLabel(o.deliveryMethod)}</span>}
-                  <span className="pill">{getDeliverySlotLabel(o.deliverySlot)}</span>
+                  {/* 택배는 시간 지정 개념이 없어서(도착 시간을 고를 수 없음) 이 경우엔 "미지정"이 떠도 의미가 없다 */}
+                  {o.deliveryMethod !== 'PARCEL' && <span className="pill">{getDeliverySlotLabel(o.deliverySlot)}</span>}
                 </span>
                 {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
               </span>
