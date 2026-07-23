@@ -282,20 +282,22 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
               <div className="order-item-list order-item-list-divider">
                 <div className="field-section" style={{ margin: '0 0 8px' }}>주문 상품 목록</div>
                 {o.items.map((item) => (
-                  <div className="order-item-row" key={item.id}>
-                    <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${item.c2}, ${item.c1})` }} />
-                    <div className="order-item-info">
-                      <div className="order-item-name-row">
-                        <span className="order-item-name">{item.productName}</span>
-                        <span className="order-item-barcode">{item.barcode ?? demoBarcode(item.id)}</span>
-                        {!item.hasIssue && (
-                          <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openIssue(item.id)}>
-                            오염·손상 발생
-                          </button>
-                        )}
+                  <div className="order-item-block" key={item.id}>
+                    {/* 상품 그룹: 썸네일/이름/바코드/가격 — 오염 그룹의 유무·내용과 무관하게 항상 같은 크기/위치 */}
+                    <div className="order-item-row">
+                      <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${item.c2}, ${item.c1})` }} />
+                      <div className="order-item-info">
+                        <div className="order-item-name-row">
+                          <span className="order-item-name">{item.productName}</span>
+                          <span className="order-item-barcode">{item.barcode ?? demoBarcode(item.id)}</span>
+                        </div>
+                        <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                       </div>
-                      {item.hasIssue && (
-                        <div className="order-item-issue-info">
+                    </div>
+                    {/* 오염 그룹: 상품 그룹과 완전히 별개의 줄 — 버튼/사진/사유가 상품 그룹 레이아웃에 영향 없음 */}
+                    <div className="order-item-issue-row">
+                      {item.hasIssue ? (
+                        <span className="order-item-issue-info">
                           <span className="order-item-issue-photos">
                             {item.issuePhotoUrls.map((url, i) => (
                               // eslint-disable-next-line @next/next/no-img-element
@@ -303,9 +305,12 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                             ))}
                           </span>
                           <span className="order-item-issue-reason">{item.issueReason}</span>
-                        </div>
+                        </span>
+                      ) : (
+                        <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openIssue(item.id)}>
+                          오염·손상 발생
+                        </button>
                       )}
-                      <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                     </div>
                   </div>
                 ))}
