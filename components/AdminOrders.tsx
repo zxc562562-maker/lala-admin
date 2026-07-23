@@ -199,7 +199,21 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                   {o.deliveryAddress && <span className="order-cust-sub">{o.deliveryAddress}</span>}
                   {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
                 </span>
-                <span className="order-amt">{won(o.amount)}</span>
+                <span className="order-amt-col">
+                  <span className="order-amt">{won(o.amount)}</span>
+                  <span className="order-dispute-action-row">
+                    {o.disputed && o.disputeReason && <span className="order-dispute-reason-inline">사유: {o.disputeReason}</span>}
+                    {o.disputed ? (
+                      <button className="cta" disabled={pending} onClick={() => resolve(o.id)} style={{ margin: 0, width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
+                        분쟁 해결
+                      </button>
+                    ) : (
+                      <button className="cta" disabled={pending} onClick={() => setDisputeTarget(o.id)} style={{ margin: 0, width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
+                        분쟁 지정
+                      </button>
+                    )}
+                  </span>
+                </span>
               </div>
 
               <span className="order-period-group">
@@ -211,8 +225,9 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                 {(o.deliveryMethod === 'DIRECT' || o.deliveryMethod === 'QUICK') && (
                   <span className="pill">{shortSlotLabel(o.deliverySlot)}</span>
                 )}
+                <span className="order-ctrl-divider" />
                 <span className="order-inline-ctrl">
-                  <span>상태</span>
+                  <span className="order-ctrl-label-wide">상태</span>
                   <span className="order-status-btns">
                     {visibleStatuses(o.fulfillment).map((s) => (
                       <button
@@ -236,12 +251,22 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                     </button>
                   </span>
                 </span>
+                <span className="order-ctrl-divider" />
                 <span className="order-inline-ctrl">
-                  <span>오류</span>
-                  <select className="order-inline-select" value={ISSUE_STATUSES.includes(o.fulfillment) ? o.fulfillment : ''} disabled={pending} onChange={(e) => setStatus(o.id, e.target.value as Fulfillment)}>
-                    <option value="" disabled>없음</option>
-                    {ISSUE_STATUSES.map((s) => <option key={s} value={s}>{LABEL[s]}</option>)}
-                  </select>
+                  <span className="order-ctrl-label-wide">오류</span>
+                  <span className="order-status-btns">
+                    {ISSUE_STATUSES.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        className={`order-status-btn${s === o.fulfillment ? ' active' : ''}`}
+                        disabled={pending}
+                        onClick={() => setStatus(o.id, s)}
+                      >
+                        {LABEL[s]}
+                      </button>
+                    ))}
+                  </span>
                 </span>
                 <span className="order-inline-ctrl">
                   <span>배송직원</span>
@@ -249,17 +274,6 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                     <option value="">미배정</option>
                     {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
-                </span>
-                <span className="order-inline-ctrl">
-                  {o.disputed ? (
-                    <button className="cta ghost" disabled={pending} onClick={() => resolve(o.id)} style={{ width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
-                      분쟁 해결 처리
-                    </button>
-                  ) : (
-                    <button className="cta" disabled={pending} onClick={() => setDisputeTarget(o.id)} style={{ margin: 0, width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
-                      분쟁 지정
-                    </button>
-                  )}
                 </span>
               </span>
             </div>
@@ -294,10 +308,6 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                   </div>
                 ))}
               </div>
-            )}
-
-            {o.disputed && o.disputeReason && (
-              <div className="order-dispute-reason">사유: {o.disputeReason}</div>
             )}
 
             <PackagingPhotoAdminForm orderId={o.id} photoUrl={o.packagingPhotoUrl} />

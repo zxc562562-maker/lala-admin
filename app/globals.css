@@ -364,7 +364,7 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .order-list{display:flex;flex-direction:column;gap:14px}
 .order-card{border:1px solid var(--line);border-radius:6px;background:#fff;padding:16px 18px;box-shadow:0 1px 2px rgba(28,22,17,.04)}
 .order-head{display:flex;flex-direction:column;gap:8px}
-.order-head-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.order-head-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
 .order-num{font-weight:400;opacity:.5;margin-right:2px}
 .order-cust-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .order-cust{font-size:15px;font-weight:600;color:var(--espresso);white-space:nowrap}
@@ -372,11 +372,15 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .order-period-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .order-period{font-size:12px;font-weight:400;opacity:.65;white-space:nowrap}
 .order-amt{font-size:14px;font-weight:600;color:var(--espresso);white-space:nowrap}
+.order-amt-col{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.order-dispute-action-row{display:flex;align-items:center;gap:8px}
 .order-status{font-size:12px;color:var(--espresso)}
 .order-sub{font-size:12px;color:var(--espresso);opacity:.65;margin-top:4px}
 .order-sub-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
 .order-inline-ctrl{display:inline-flex;align-items:center;gap:4px;margin-left:4px}
 .order-inline-ctrl>span:first-child{font-size:11px;color:var(--espresso);opacity:.7;flex-shrink:0}
+.order-ctrl-label-wide{letter-spacing:.1em}
+.order-ctrl-divider{width:1px;height:16px;background:var(--line);flex-shrink:0;margin:0 2px}
 .order-inline-select{font-family:var(--sans);font-size:12px;padding:4px 6px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--espresso)}
 .order-status-btns{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
 .order-status-btn{background:#fff;border:1px solid var(--line);border-radius:3px;padding:4px 8px;font-size:11.5px;font-family:var(--sans);color:var(--espresso);cursor:pointer;white-space:nowrap}
@@ -520,7 +524,7 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 
 /* ===== 관리자: 분쟁 배지 ===== */
 .order-dispute-badge{display:inline-block;margin-left:8px;font-size:10.5px;color:var(--espresso);background:rgba(107,39,55,.12);padding:2px 8px;border-radius:99px;vertical-align:middle}
-.order-dispute-reason{font-size:11.5px;color:var(--espresso);margin-top:4px}
+.order-dispute-reason-inline{font-size:11px;color:var(--espresso);opacity:.7;text-align:right;max-width:220px}
 
 /* ===== 가입 폼 확장 ===== */
 .agree-row{display:flex;align-items:center;gap:8px;font-size:12px;color:#4A4146;padding:1px 0}
