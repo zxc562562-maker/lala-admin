@@ -77,11 +77,12 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
   const [rangeEnd, setRangeEnd] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  // 주문번호: 주문이 실제로 들어온 순서(생성일 오름차순) 기준 — 목록 정렬/필터와 무관하게 고정된 번호.
+  // 주문번호: 렌탈 시작일(checkout) 오름차순 기준 — 조회 필터도 checkout 기준이라 맞춰둠.
+  // 같은 날짜끼리는 결제 순서(createdAt)로 안정적으로 묶어준다.
   const orderNumberById = useMemo(() => {
-    const byCreatedAsc = [...orders].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const byCheckoutAsc = [...orders].sort((a, b) => a.checkout.localeCompare(b.checkout) || a.createdAt.localeCompare(b.createdAt));
     const m = new Map<string, number>();
-    byCreatedAsc.forEach((o, i) => m.set(o.id, i + 1));
+    byCheckoutAsc.forEach((o, i) => m.set(o.id, i + 1));
     return m;
   }, [orders]);
 
