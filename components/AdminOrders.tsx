@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import { updateFulfillment, assignOrder, openDispute, resolveDispute, setItemIssue, type OrderRow, type Fulfillment } from '@lala/shared/lib/staff-actions';
 import { FULFILLMENT_LABEL as LABEL } from '@lala/shared/lib/fulfillment-label';
-import { getDeliverySlotLabel, DELIVERY_METHODS } from '@lala/shared/lib/delivery';
+import { getDeliverySlotLabel } from '@lala/shared/lib/delivery';
 import ReturnTrackingAdminForm from './ReturnTrackingAdminForm';
 import PackagingPhotoAdminForm from './PackagingPhotoAdminForm';
 import AdminDatePicker from './AdminDatePicker';
@@ -26,6 +26,16 @@ function rentalDays(checkout: string, ret: string): number {
   return Math.max(1, Math.round(ms / 86400000));
 }
 
+/** "2026-07-22" -> "26-07-22" — 주문 카드는 좁은 공간에 표기하니 연도 앞 2자리는 생략. */
+function shortDate(d: string): string {
+  return d.length === 10 ? d.slice(2) : d;
+}
+
+/** 배송시간은 오후대(3~8시)뿐이라 "오후"를 붙일 필요가 없음 — 알약 표기는 시각만. */
+function shortSlotLabel(id: string | null): string {
+  return getDeliverySlotLabel(id).replace('오후 ', '');
+}
+
 /** 재고 개체에 실제 바코드가 없는 경우(데모/구주문 등)를 위한 대체 표시 — reservation id 기반이라 매번 같은 값이 나온다. */
 function demoBarcode(seed: string): string {
   let h = 0;
@@ -33,9 +43,12 @@ function demoBarcode(seed: string): string {
   return `LALA-${String(h % 100000000).padStart(8, '0')}`;
 }
 
+/** 주문 카드 알약은 공간이 좁아 "직배송/퀵배송" 대신 "직/퀵"으로 줄여 표기(택배는 그대로). */
+const METHOD_SHORT_LABEL: Record<string, string> = { DIRECT: '직', QUICK: '퀵', PARCEL: '택배' };
+
 /** 미지정(null)이면 알약 자체를 안 보여줄 거라 null 리턴. */
 function deliveryMethodLabel(id: string | null): string | null {
-  return DELIVERY_METHODS.find((m) => m.id === id)?.label ?? null;
+  return id ? METHOD_SHORT_LABEL[id] ?? null : null;
 }
 
 export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; staff: { id: string; name: string }[] }) {
@@ -139,14 +152,27 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
               <span className="order-cust">
                 <span><span className="order-num">#{orderNumberById.get(o.id)}</span> {o.customerName}</span>
                 <span className="order-period-group">
-                  <span className="order-period">{o.checkout} → {o.return}</span>
+                  <span className="order-period">{shortDate(o.checkout)} → {shortDate(o.return)}</span>
                   <span className="pill">{rentalDays(o.checkout, o.return)}일</span>
                   {deliveryMethodLabel(o.deliveryMethod) && <span className="pill">{deliveryMethodLabel(o.deliveryMethod)}</span>}
                   {/* 배송시간은 직배송/퀵배송에서만 의미가 있다(택배는 시간 지정 자체가 없고,
                       배송방법이 아직 안 정해졌으면 시간도 당연히 의미가 없다 — 방법이 시간보다 선행) */}
                   {(o.deliveryMethod === 'DIRECT' || o.deliveryMethod === 'QUICK') && (
-                    <span className="pill">{getDeliverySlotLabel(o.deliverySlot)}</span>
+                    <span className="pill">{shortSlotLabel(o.deliverySlot)}</span>
                   )}
+                  <span className="order-inline-ctrl">
+                    <span>상태</span>
+                    <select className="order-inline-select" value={o.fulfillment} disabled={pending} onChange={(e) => setStatus(o.id, e.target.value as Fulfillment)}>
+                      {STATUSES.map((s) => <option key={s} value={s}>{LABEL[s]}</option>)}
+                    </select>
+                  </span>
+                  <span className="order-inline-ctrl">
+                    <span>배송직원</span>
+                    <select className="order-inline-select" value={o.assignedTo ?? ''} disabled={pending} onChange={(e) => assign(o.id, e.target.value)}>
+                      <option value="">미배정</option>
+                      {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </span>
                 </span>
                 {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
               </span>
@@ -174,22 +200,6 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
               <div className="order-dispute-reason">사유: {o.disputeReason}</div>
             )}
 
-            <div className="order-ctrls">
-              <div className="order-ctrl-row">
-                <span>상태</span>
-                <select value={o.fulfillment} disabled={pending} onChange={(e) => setStatus(o.id, e.target.value as Fulfillment)}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{LABEL[s]}</option>)}
-                </select>
-                <span className="pill">{LABEL[o.fulfillment]}</span>
-              </div>
-              <div className="order-ctrl-row">
-                <span>배송직원</span>
-                <select value={o.assignedTo ?? ''} disabled={pending} onChange={(e) => assign(o.id, e.target.value)}>
-                  <option value="">미배정</option>
-                  {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </div>
-            </div>
             <PackagingPhotoAdminForm orderId={o.id} photoUrl={o.packagingPhotoUrl} />
             {(o.fulfillment === 'PRE_INSPECT_ISSUE' || o.fulfillment === 'RETURN_ISSUE') && o.items.length > 0 && (
               <div className="order-issue-items">

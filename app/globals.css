@@ -194,6 +194,7 @@ body{color:var(--espresso)}
 .order-detail-plain .row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:13px}
 .order-item-list{display:flex;flex-direction:column;gap:12px}
 .order-item-list-divider{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.order-issue-items{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .order-item-row{position:relative;display:flex;align-items:center;gap:14px}
 .order-item-response-row{position:absolute;right:0;top:50%;transform:translateY(-50%)}
 .order-item-thumb{width:48px;height:64px;border-radius:2px;flex-shrink:0;object-fit:cover}
@@ -357,16 +358,15 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .order-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .order-num{font-weight:400;opacity:.5;margin-right:2px}
 .order-cust{font-size:15px;font-weight:600;color:var(--espresso);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.order-period-group{display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap}
+.order-period-group{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
 .order-period{font-size:12px;font-weight:400;opacity:.65;white-space:nowrap}
 .order-amt{font-size:14px;font-weight:600;color:var(--espresso);white-space:nowrap}
 .order-status{font-size:12px;color:var(--espresso)}
 .order-sub{font-size:12px;color:var(--espresso);opacity:.65;margin-top:4px}
 .order-sub-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
-.order-ctrls{display:flex;flex-wrap:wrap;gap:24px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
-.order-ctrl-row{display:flex;align-items:center;gap:10px}
-.order-ctrl-row>span:first-child{font-size:11px;color:var(--espresso);opacity:.7;width:52px;flex-shrink:0}
-.order-ctrls select{font-family:var(--sans);font-size:12.5px;padding:7px 8px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--espresso)}
+.order-inline-ctrl{display:inline-flex;align-items:center;gap:4px;margin-left:4px}
+.order-inline-ctrl>span:first-child{font-size:11px;color:var(--espresso);opacity:.7;flex-shrink:0}
+.order-inline-select{font-family:var(--sans);font-size:12px;padding:4px 6px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--espresso)}
 
 .pill{display:inline-block;padding:3px 10px;border-radius:999px;background:var(--paper);border:1px solid var(--line);font-size:11px;color:var(--espresso);white-space:nowrap}
 
