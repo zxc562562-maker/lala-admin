@@ -280,7 +280,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
 
             {o.items.length > 0 && (
               <div className="order-item-list order-item-list-divider">
-                <div className="field-section" style={{ margin: '0 0 8px' }}>주문 상품 목록</div>
+                <div className="field-section" style={{ margin: 0 }}>주문 상품 목록</div>
                 {o.items.map((item) => (
                   <div className="order-item-block" key={item.id}>
                     {/* 상품 그룹: 썸네일/이름/바코드/가격 — 오염 그룹의 유무·내용과 무관하게 항상 같은 크기/위치 */}
