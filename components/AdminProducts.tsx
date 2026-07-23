@@ -66,6 +66,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
   }
 
   function submit() {
+    if (!form.colorName.trim()) { setFormError('색상명을 입력해주세요(바코드 생성에 필요해요).'); return; }
     setFormError(null);
     startTransition(async () => {
       const result = editingId ? await updateProduct(editingId, form) : await createProduct(form);
@@ -101,31 +102,29 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
           <table className="dtable">
             <thead>
               <tr>
-                <th>색상</th><th>상품</th><th>카테고리</th><th>사이즈</th>
-                <th className="num">일 대여료</th><th className="num">보증금</th><th className="num">재고</th><th></th>
+                <th>이미지</th><th>카테고리</th><th>상품</th><th>사이즈</th>
+                <th className="num">렌탈요금</th><th className="num">보증금</th><th className="num">재고</th><th></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <span className="swatch-pair">
-                      <span style={{ background: p.c1 }} />
-                      <span style={{ background: p.c2 }} />
-                    </span>
+                    <Link href={`/admin/products/${p.id}`}>
+                      <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${p.c2}, ${p.c1})` }} />
+                    </Link>
                   </td>
+                  <td>{p.category}</td>
                   <td>
                     <Link href={`/admin/products/${p.id}`} className="prod-name" style={{ textDecoration: 'none' }}>{p.name}</Link>
                     {p.barcodes.length > 0 && <div className="prod-brand prod-barcodes">{p.barcodes.join(', ')}</div>}
                   </td>
-                  <td>{p.category}</td>
                   <td>{p.size}</td>
                   <td className="num">{won(p.dailyPrice)}</td>
                   <td className="num">{won(p.deposit)}</td>
                   <td className="num">{p.itemCount}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
-                    <Link href={`/admin/products/${p.id}`} className="btn-text">재고</Link>
-                    <button className="btn-text" onClick={() => openEdit(p)}>수정</button>
+                    <button className="btn-primary" style={{ padding: '7px 14px' }} onClick={() => openEdit(p)}>수정</button>
                   </td>
                 </tr>
               ))}

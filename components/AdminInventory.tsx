@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import type { InventoryListRow } from '@/lib/product-actions';
 import type { ItemStatus } from '@lala/shared/lib/domain/inventory';
-import BarcodeImage from './BarcodeImage';
 
 const LABEL: Record<ItemStatus, string> = {
   AVAILABLE: '대여가능', RESERVED: '예약됨', RENTED: '대여중', RETURNED: '회수됨',
@@ -76,20 +75,22 @@ export default function AdminInventory({ items }: { items: InventoryListRow[] })
         <div className="dtable-wrap">
           <table className="dtable">
             <thead>
-              <tr><th>색상</th><th>바코드</th><th>상품</th><th>카테고리 · 사이즈</th><th>상태</th><th className="num">컨디션</th><th className="num">누적 대여</th><th></th></tr>
+              <tr><th>이미지</th><th>카테고리</th><th>상품</th><th>사이즈</th><th>상태</th><th className="num">컨디션</th><th className="num">누적 대여</th><th></th></tr>
             </thead>
             <tbody>
               {filtered.map((it) => (
                 <tr key={it.id}>
                   <td>
-                    <span className="swatch-pair">
-                      <span style={{ background: it.c1 }} />
-                      <span style={{ background: it.c2 }} />
-                    </span>
+                    <Link href={`/admin/products/${it.productId}`}>
+                      <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${it.c2}, ${it.c1})` }} />
+                    </Link>
                   </td>
-                  <td><BarcodeImage value={it.barcode} /></td>
-                  <td className="prod-name">{it.productName}</td>
-                  <td>{it.productCategory} · {it.productSize}</td>
+                  <td>{it.productCategory}</td>
+                  <td>
+                    <span className="prod-name">{it.productName}</span>
+                    <div className="prod-brand prod-barcodes">{it.barcode}</div>
+                  </td>
+                  <td>{it.productSize}</td>
                   <td><span>● {LABEL[it.status]}</span></td>
                   <td className="num">{it.condition}</td>
                   <td className="num">{it.rentalCount}</td>
