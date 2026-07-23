@@ -87,15 +87,14 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
 
   const rangeActive = !!rangeStart && !!rangeEnd;
 
+  // 결제일이 아니라 렌탈 시작일(checkout) 기준 — 결제일로 필터링하면 렌탈일을 미리 체크 못해
+  // 결제 당일에 잘못 발송될 위험이 있음(직원 실수 방지).
   const visibleOrders = useMemo(() => {
     if (showAll) return orders;
     if (rangeActive) {
-      return orders.filter((o) => {
-        const d = o.createdAt.slice(0, 10);
-        return d >= rangeStart && d <= rangeEnd;
-      });
+      return orders.filter((o) => o.checkout >= rangeStart && o.checkout <= rangeEnd);
     }
-    return orders.filter((o) => o.createdAt.slice(0, 10) === dateFilter);
+    return orders.filter((o) => o.checkout === dateFilter);
   }, [orders, dateFilter, rangeStart, rangeEnd, rangeActive, showAll]);
 
   // 실시간: payment_order 변경 시 서버 컴포넌트 재실행
