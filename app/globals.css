@@ -210,7 +210,7 @@ body{color:var(--espresso)}
 .order-item-issue-btn:disabled{opacity:.5;cursor:default}
 .order-item-issue-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .order-item-issue-photos{display:flex;gap:4px}
-.order-item-issue-photo{width:43px;height:58px;object-fit:cover;border-radius:2px;border:1px solid var(--line)}
+.order-item-issue-photo{width:48px;height:64px;object-fit:cover;border-radius:2px;border:1px solid var(--line)}
 .order-item-issue-reason{font-size:11px;color:var(--espresso);opacity:.75}
 .order-item-issue-preview-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 /* 패키징 사진 확대 팝업 이미지 */
