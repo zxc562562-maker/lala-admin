@@ -135,9 +135,8 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
       )}
 
       {drawerOpen && (
-        <>
-          <div className="drawer-overlay" onClick={closeDrawer} />
-          <div className="drawer">
+        <div className="wd-ov" onClick={(e) => e.target === e.currentTarget && closeDrawer()}>
+          <div className="modal-form-box">
             <h2>{editingId ? '상품 수정' : '상품 등록'}</h2>
             <div className="field-group">
               <label>상품명</label>
@@ -187,7 +186,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
               <button className="btn-primary" onClick={submit} disabled={pending}>{pending ? '저장 중…' : '저장'}</button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </section>
   );
