@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Cormorant_Garamond, Pinyon_Script, Tenor_Sans, Noto_Sans_KR } from 'next/font/google';
+import { Cormorant_Garamond, Pinyon_Script } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 
 const cormorant = Cormorant_Garamond({
@@ -10,7 +11,7 @@ const cormorant = Cormorant_Garamond({
   display: 'swap',
 });
 
-// 워드마크(로고)용 필기체
+// 워드마크(로고)용 필기체 — 로그인 화면 브랜드 표기에만 사용
 const pinyon = Pinyon_Script({
   subsets: ['latin'],
   weight: '400',
@@ -18,18 +19,12 @@ const pinyon = Pinyon_Script({
   display: 'swap',
 });
 
-// 본문 폰트 — 자체 호스팅(빌드 시 다운로드해 로컬 서빙)으로 구글 폰트 외부 요청 제거
-const tenorSans = Tenor_Sans({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-tenor',
-  display: 'swap',
-});
-
-const notoSansKr = Noto_Sans_KR({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '700'],
-  variable: '--font-noto-kr',
+// 본문 폰트 — 직원이 모니터를 오래 보는 화면이라 시인성이 최우선. Tenor Sans(브랜드용 장식 서체) 대신
+// 한국 UI/대시보드에서 화면 가독성 기준으로 표준처럼 쓰이는 Pretendard(가변 폰트)로 교체.
+const pretendard = localFont({
+  src: '../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2',
+  variable: '--font-pretendard',
+  weight: '45 920',
   display: 'swap',
 });
 
@@ -47,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="ko"
-      className={`${cormorant.variable} ${pinyon.variable} ${tenorSans.variable} ${notoSansKr.variable}`}
+      className={`${cormorant.variable} ${pinyon.variable} ${pretendard.variable}`}
     >
       <body>{children}</body>
     </html>

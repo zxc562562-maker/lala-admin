@@ -1,6 +1,9 @@
 @import '../../packages/shared/styles/tokens.css';
 /* 관리자 웹 전용: 기본 글자색을 에스프레소로 고정 (요청 시 개별 요소만 예외 처리) */
 body{color:var(--espresso)}
+/* 관리자 웹 전용: 브랜드용 장식 서체(Tenor Sans) 대신 모니터 장시간 응시에 맞는 Pretendard로 본문 폰트 교체.
+   워드마크(로그인 화면 "Lala")는 --script(Pinyon Script)를 그대로 쓰니 영향 없음. */
+:root{--sans:var(--font-pretendard), -apple-system, 'Apple SD Gothic Neo', sans-serif}
 .serif{font-family:var(--sans),Georgia,serif}
 .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
