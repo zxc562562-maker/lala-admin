@@ -12,9 +12,10 @@ import AdminDatePicker from './AdminDatePicker';
 
 const won = (n: number) => n.toLocaleString('ko-KR') + '원';
 const STATUSES: Fulfillment[] = [
-  'ORDERED', 'PRE_INSPECTING', 'READY', 'SHIPPED', 'DELIVERED', 'RETURN_REQUESTED', 'RETURN_INSPECTING', 'REFUNDED',
-  'PRE_INSPECT_ISSUE', 'MISDELIVERED', 'RETURN_ISSUE',
+  'ORDERED', 'PRE_INSPECTING', 'READY', 'SHIPPED', 'DELIVERED', 'RETURN_REQUESTED', 'RETURN_INSPECTING', 'REFUNDED', 'DEPOSIT_REFUNDED',
 ];
+// 정상 흐름 중간에 끼어드는 오류 분기 — 진행 상태와 섞어놓으면 헷갈려서 별도 select로 분리.
+const ISSUE_STATUSES: Fulfillment[] = ['PRE_INSPECT_ISSUE', 'MISDELIVERED', 'RETURN_ISSUE'];
 
 function todayISO(): string {
   const d = new Date();
@@ -149,45 +150,60 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
         {visibleOrders.map((o) => (
           <div className="order-card" key={o.id}>
             <div className="order-head">
-              <span className="order-cust">
-                <span><span className="order-num">#{orderNumberById.get(o.id)}</span> {o.customerName}</span>
-                <span className="order-period-group">
-                  <span className="order-period">{shortDate(o.checkout)} → {shortDate(o.return)}</span>
-                  <span className="pill">{rentalDays(o.checkout, o.return)}일</span>
-                  {deliveryMethodLabel(o.deliveryMethod) && <span className="pill">{deliveryMethodLabel(o.deliveryMethod)}</span>}
-                  {/* 배송시간은 직배송/퀵배송에서만 의미가 있다(택배는 시간 지정 자체가 없고,
-                      배송방법이 아직 안 정해졌으면 시간도 당연히 의미가 없다 — 방법이 시간보다 선행) */}
-                  {(o.deliveryMethod === 'DIRECT' || o.deliveryMethod === 'QUICK') && (
-                    <span className="pill">{shortSlotLabel(o.deliverySlot)}</span>
-                  )}
-                  <span className="order-inline-ctrl">
-                    <span>상태</span>
-                    <select className="order-inline-select" value={o.fulfillment} disabled={pending} onChange={(e) => setStatus(o.id, e.target.value as Fulfillment)}>
-                      {STATUSES.map((s) => <option key={s} value={s}>{LABEL[s]}</option>)}
-                    </select>
+              <div className="order-head-top">
+                <span className="order-cust-row">
+                  <span className="order-cust">
+                    <span className="order-num">#{orderNumberById.get(o.id)}</span> {o.customerName}
                   </span>
-                  <span className="order-inline-ctrl">
-                    <span>배송직원</span>
-                    <select className="order-inline-select" value={o.assignedTo ?? ''} disabled={pending} onChange={(e) => assign(o.id, e.target.value)}>
-                      <option value="">미배정</option>
-                      {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                  </span>
-                  <span className="order-inline-ctrl">
-                    {o.disputed ? (
-                      <button className="cta ghost" disabled={pending} onClick={() => resolve(o.id)} style={{ width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
-                        분쟁 해결 처리
-                      </button>
-                    ) : (
-                      <button className="cta" disabled={pending} onClick={() => setDisputeTarget(o.id)} style={{ margin: 0, width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
-                        분쟁 지정
-                      </button>
-                    )}
-                  </span>
+                  {o.customerPhone && <span className="order-cust-sub">{o.customerPhone}</span>}
+                  {o.deliveryAddress && <span className="order-cust-sub">{o.deliveryAddress}</span>}
+                  {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
                 </span>
-                {o.disputed && <span className="order-dispute-badge">분쟁중</span>}
+                <span className="order-amt">{won(o.amount)}</span>
+              </div>
+
+              <span className="order-period-group">
+                <span className="order-period">{shortDate(o.checkout)} → {shortDate(o.return)}</span>
+                <span className="pill">{rentalDays(o.checkout, o.return)}일</span>
+                {deliveryMethodLabel(o.deliveryMethod) && <span className="pill">{deliveryMethodLabel(o.deliveryMethod)}</span>}
+                {/* 배송시간은 직배송/퀵배송에서만 의미가 있다(택배는 시간 지정 자체가 없고,
+                    배송방법이 아직 안 정해졌으면 시간도 당연히 의미가 없다 — 방법이 시간보다 선행) */}
+                {(o.deliveryMethod === 'DIRECT' || o.deliveryMethod === 'QUICK') && (
+                  <span className="pill">{shortSlotLabel(o.deliverySlot)}</span>
+                )}
+                <span className="order-inline-ctrl">
+                  <span>상태</span>
+                  <select className="order-inline-select" value={STATUSES.includes(o.fulfillment) ? o.fulfillment : ''} disabled={pending} onChange={(e) => setStatus(o.id, e.target.value as Fulfillment)}>
+                    <option value="" disabled>선택</option>
+                    {STATUSES.map((s) => <option key={s} value={s}>{LABEL[s]}</option>)}
+                  </select>
+                </span>
+                <span className="order-inline-ctrl">
+                  <span>오류</span>
+                  <select className="order-inline-select" value={ISSUE_STATUSES.includes(o.fulfillment) ? o.fulfillment : ''} disabled={pending} onChange={(e) => setStatus(o.id, e.target.value as Fulfillment)}>
+                    <option value="" disabled>없음</option>
+                    {ISSUE_STATUSES.map((s) => <option key={s} value={s}>{LABEL[s]}</option>)}
+                  </select>
+                </span>
+                <span className="order-inline-ctrl">
+                  <span>배송직원</span>
+                  <select className="order-inline-select" value={o.assignedTo ?? ''} disabled={pending} onChange={(e) => assign(o.id, e.target.value)}>
+                    <option value="">미배정</option>
+                    {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </span>
+                <span className="order-inline-ctrl">
+                  {o.disputed ? (
+                    <button className="cta ghost" disabled={pending} onClick={() => resolve(o.id)} style={{ width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
+                      분쟁 해결 처리
+                    </button>
+                  ) : (
+                    <button className="cta" disabled={pending} onClick={() => setDisputeTarget(o.id)} style={{ margin: 0, width: 'auto', padding: '5px 10px', fontSize: 11.5 }}>
+                      분쟁 지정
+                    </button>
+                  )}
+                </span>
               </span>
-              <span className="order-amt">{won(o.amount)}</span>
             </div>
 
             {o.items.length > 0 && (
