@@ -168,17 +168,6 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
                   onChange={(e) => setForm({ ...form, deposit: Math.max(0, Number(e.target.value) || 0) })} />
               </div>
             </div>
-            <div className="drawer-row">
-              <div className="field-group">
-                <label>스와치 색상 1 (어두운 쪽)</label>
-                <input type="color" className="field" value={form.c1} onChange={(e) => setForm({ ...form, c1: e.target.value })} />
-              </div>
-              <div className="field-group">
-                <label>스와치 색상 2 (밝은 쪽)</label>
-                <input type="color" className="field" value={form.c2} onChange={(e) => setForm({ ...form, c2: e.target.value })} />
-              </div>
-            </div>
-
             {formError && <p style={{ fontSize: 12 }}>{formError}</p>}
 
             <div className="drawer-actions">

@@ -215,6 +215,8 @@ export interface InventoryListRow extends AdminInventoryItem {
   productName: string;
   productCategory: string;
   productSize: string;
+  c1: string;
+  c2: string;
 }
 
 export async function listInventoryItems(filter?: InventoryListFilter): Promise<InventoryListRow[]> {
@@ -222,16 +224,18 @@ export async function listInventoryItems(filter?: InventoryListFilter): Promise<
   if (!me?.isApprover) return [];
 
   const sb = supabaseAdmin();
-  let q = sb.from('inventory_item').select(`${ITEM_SELECT},product:product_id(name,category,size)`);
+  let q = sb.from('inventory_item').select(`${ITEM_SELECT},product:product_id(name,category,size,color_1,color_2)`);
   if (filter?.status) q = q.eq('status', filter.status);
   const { data, error } = await q.order('created_at', { ascending: false });
   if (error || !data) return [];
 
-  const rows = (data as unknown as Array<Parameters<typeof mapItem>[0] & { product: { name: string; category: string; size: string } | null }>).map((r) => ({
+  const rows = (data as unknown as Array<Parameters<typeof mapItem>[0] & { product: { name: string; category: string; size: string; color_1: string | null; color_2: string | null } | null }>).map((r) => ({
     ...mapItem(r),
     productName: r.product?.name ?? '(삭제된 상품)',
     productCategory: r.product?.category ?? '—',
     productSize: r.product?.size ?? '—',
+    c1: r.product?.color_1 ?? '#3B2230',
+    c2: r.product?.color_2 ?? '#6B2737',
   }));
 
   const search = filter?.search?.trim().toLowerCase();
