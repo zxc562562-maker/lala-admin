@@ -517,9 +517,11 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
             <input
               className="field"
               style={{ width: '100%' }}
-              placeholder="바코드"
+              placeholder="바코드 스캔"
               value={outboundBarcode}
               onChange={(e) => setOutboundBarcode(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') submitOutbound(); }}
+              disabled={pending}
               autoFocus
             />
             {outboundMismatch && (
@@ -531,7 +533,6 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
             {outboundErr && !outboundMismatch && <p className="hint err">{outboundErr}</p>}
             <div className="wd-btns">
               <button className="cta ghost" onClick={() => setOutboundTarget(null)}>취소</button>
-              <button className="cta" disabled={pending} onClick={submitOutbound}>등록</button>
             </div>
           </div>
         </div>
