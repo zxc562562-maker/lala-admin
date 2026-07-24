@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
-import { updateFulfillment, assignOrder, openDispute, resolveDispute, saveItemIssue, type OrderRow, type Fulfillment } from '@lala/shared/lib/staff-actions';
+import {
+  updateFulfillment, assignOrder, openDispute, resolveDispute, saveItemIssue,
+  listSiblingItemsForReservation, reassignReservationItem,
+  type OrderRow, type Fulfillment, type SiblingItemRow,
+} from '@lala/shared/lib/staff-actions';
 import { FULFILLMENT_LABEL as LABEL } from '@lala/shared/lib/fulfillment-label';
 import { getDeliverySlotLabel } from '@lala/shared/lib/delivery';
 import ReturnTrackingAdminForm from './ReturnTrackingAdminForm';
@@ -72,6 +76,10 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
   const [issuePhotos, setIssuePhotos] = useState<File[]>([]);
   const [issueErr, setIssueErr] = useState<string | null>(null);
   const issuePhotoPreviews = useMemo(() => issuePhotos.map((f) => URL.createObjectURL(f)), [issuePhotos]);
+  const [reassignTarget, setReassignTarget] = useState<string | null>(null); // reservation id
+  const [siblingItems, setSiblingItems] = useState<SiblingItemRow[]>([]);
+  const [reassignLoading, setReassignLoading] = useState(false);
+  const [reassignErr, setReassignErr] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState(todayISO());
   const [rangeStart, setRangeStart] = useState('');
   const [rangeEnd, setRangeEnd] = useState('');
@@ -152,6 +160,26 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
       const res = await saveItemIssue(reservationId, issueReason, formData);
       if (res.ok) { setIssueTarget(null); router.refresh(); }
       else setIssueErr(res.reason);
+    });
+  }
+  function openReassign(reservationId: string) {
+    setReassignTarget(reservationId);
+    setSiblingItems([]);
+    setReassignErr(null);
+    setReassignLoading(true);
+    listSiblingItemsForReservation(reservationId).then((rows) => {
+      setSiblingItems(rows);
+      setReassignLoading(false);
+    });
+  }
+  function pickReassign(newItemId: string) {
+    if (!reassignTarget) return;
+    const reservationId = reassignTarget;
+    setReassignErr(null);
+    startTransition(async () => {
+      const res = await reassignReservationItem(reservationId, newItemId);
+      if (res.ok) { setReassignTarget(null); router.refresh(); }
+      else setReassignErr(res.reason);
     });
   }
 
@@ -290,6 +318,9 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                         <div className="order-item-name-row">
                           <span className="order-item-name">{item.productName}</span>
                           <span className="order-item-barcode">{item.barcode ?? demoBarcode(item.id)}</span>
+                          <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openReassign(item.id)}>
+                            재배정
+                          </button>
                         </div>
                         <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                       </div>
@@ -375,6 +406,40 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
             <div className="wd-btns">
               <button className="cta ghost" onClick={() => setIssueTarget(null)}>취소</button>
               <button className="cta" disabled={pending} onClick={submitIssue}>등록</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reassignTarget && (
+        <div className="wd-ov" onClick={(e) => e.target === e.currentTarget && setReassignTarget(null)}>
+          <div className="wd-box">
+            <div className="wd-title">재고 개체 재배정</div>
+            <p className="wd-desc">같은 상품의 다른 개체로 바꿀 수 있어요. 폐기·수선 중인 개체는 목록에서 빠집니다.</p>
+            {reassignLoading ? (
+              <p className="staff-empty" style={{ padding: '20px 0' }}>불러오는 중…</p>
+            ) : siblingItems.length === 0 ? (
+              <p className="staff-empty" style={{ padding: '20px 0' }}>배정 가능한 다른 개체가 없습니다.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+                {siblingItems.map((it) => (
+                  <button
+                    key={it.id}
+                    type="button"
+                    className="order-status-btn"
+                    disabled={pending || it.isCurrent}
+                    onClick={() => pickReassign(it.id)}
+                    style={{ display: 'flex', justifyContent: 'space-between', width: '100%', textAlign: 'left' }}
+                  >
+                    <span>{it.barcode}{it.isCurrent ? ' (현재 배정됨)' : ''}</span>
+                    <span>{it.status} · 컨디션 {it.condition}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {reassignErr && <p className="hint err">{reassignErr}</p>}
+            <div className="wd-btns">
+              <button className="cta ghost" onClick={() => setReassignTarget(null)}>닫기</button>
             </div>
           </div>
         </div>
