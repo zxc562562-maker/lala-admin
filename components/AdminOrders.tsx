@@ -440,7 +440,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                         key={item.id}
                         type="button"
                         className="cta"
-                        style={{ margin: 0, width: 'auto', padding: '6px 12px', fontSize: 11.5 }}
+                        style={{ margin: 0, width: 'auto', padding: '6px 8px', fontSize: 11.5 }}
                         disabled={pending}
                         onClick={() => openOutbound(item.id)}
                       >
