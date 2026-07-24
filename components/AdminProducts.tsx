@@ -88,7 +88,6 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
 
       <div className="admin-toolbar">
         <input className="admin-search" placeholder="상품명 · 바코드 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <div className="admin-spacer" />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {categories.map((c) => (
             <button key={c} type="button" className="btn-ghost"
@@ -98,6 +97,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
             </button>
           ))}
         </div>
+        <div className="admin-spacer" />
         <span className="prod-brand">총 {filtered.length}개</span>
       </div>
 
