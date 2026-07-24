@@ -307,44 +307,63 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
             </div>
 
             {o.items.length > 0 && (
-              <div className="order-item-list order-item-list-divider">
-                <div className="field-section" style={{ margin: 0 }}>주문 상품 목록</div>
-                {o.items.map((item) => (
-                  <div className="order-item-block" key={item.id}>
-                    {/* 상품 그룹: 썸네일/이름/바코드/가격 — 오염 그룹의 유무·내용과 무관하게 항상 같은 크기/위치 */}
-                    <div className="order-item-row">
+              <div className="order-item-columns">
+                {/* 주문 상품 목록: 바코드·재배정·오염 그룹까지 전부 — 변동 높이(오염 발생 시)가 있어도
+                    출고 목록은 완전히 별개의 컬럼이라 서로 밀거나 영향을 주지 않는다. */}
+                <div className="order-item-list">
+                  <div className="field-section" style={{ margin: 0 }}>주문 상품 목록</div>
+                  {o.items.map((item) => (
+                    <div className="order-item-block" key={item.id}>
+                      <div className="order-item-row">
+                        <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${item.c2}, ${item.c1})` }} />
+                        <div className="order-item-info">
+                          <div className="order-item-name-row">
+                            <span className="order-item-name">{item.productName}</span>
+                            <span className="order-item-barcode">{item.barcode ?? demoBarcode(item.id)}</span>
+                            <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openReassign(item.id)}>
+                              재배정
+                            </button>
+                          </div>
+                          <div className="order-item-price">{won(item.dailyPrice)} /일</div>
+                        </div>
+                      </div>
+                      <div className="order-item-issue-row">
+                        {item.hasIssue ? (
+                          <span className="order-item-issue-info">
+                            <span className="order-item-issue-photos">
+                              {item.issuePhotoUrls.map((url, i) => (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img key={i} src={url} alt="오염·손상 사진" className="order-item-issue-photo" />
+                              ))}
+                            </span>
+                            <span className="order-item-issue-reason">{item.issueReason}</span>
+                          </span>
+                        ) : (
+                          <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openIssue(item.id)}>
+                            오염·손상 발생
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 출고 상품 목록: 사진/이름/금액만 — 주문 목록과 동일한 항목이지만 바코드·오염 등
+                    출고와 무관한 정보는 뺐다. */}
+                <div className="order-item-list">
+                  <div className="field-section" style={{ margin: 0 }}>출고 상품 목록</div>
+                  {o.items.map((item) => (
+                    <div className="order-item-row" key={item.id}>
                       <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${item.c2}, ${item.c1})` }} />
                       <div className="order-item-info">
                         <div className="order-item-name-row">
                           <span className="order-item-name">{item.productName}</span>
-                          <span className="order-item-barcode">{item.barcode ?? demoBarcode(item.id)}</span>
-                          <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openReassign(item.id)}>
-                            재배정
-                          </button>
                         </div>
                         <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                       </div>
                     </div>
-                    {/* 오염 그룹: 상품 그룹과 완전히 별개의 줄 — 버튼/사진/사유가 상품 그룹 레이아웃에 영향 없음 */}
-                    <div className="order-item-issue-row">
-                      {item.hasIssue ? (
-                        <span className="order-item-issue-info">
-                          <span className="order-item-issue-photos">
-                            {item.issuePhotoUrls.map((url, i) => (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img key={i} src={url} alt="오염·손상 사진" className="order-item-issue-photo" />
-                            ))}
-                          </span>
-                          <span className="order-item-issue-reason">{item.issueReason}</span>
-                        </span>
-                      ) : (
-                        <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openIssue(item.id)}>
-                          오염·손상 발생
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
 

@@ -193,7 +193,8 @@ body{color:var(--espresso)}
 .product-action-row .li-row .size-chip-row{flex:none}
 .order-detail-plain .row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:13px}
 .order-item-list{display:flex;flex-direction:column;gap:12px}
-.order-item-list-divider{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.order-item-columns{display:flex;gap:24px;align-items:flex-start;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.order-item-columns .order-item-list{flex:1;min-width:0}
 .order-issue-items{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .order-item-block{display:flex;align-items:flex-start;gap:16px}
 .order-item-row{position:relative;display:flex;align-items:center;gap:14px}
