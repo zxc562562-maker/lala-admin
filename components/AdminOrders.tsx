@@ -58,6 +58,11 @@ function demoBarcode(seed: string): string {
   return `LALA-${String(h % 100000000).padStart(8, '0')}`;
 }
 
+/** 주문 목록은 공간이 좁아 바코드를 "…-사이즈"까지만 표기(끝의 순번 두 자리는 뗀다). */
+function barcodeUpToSize(barcode: string): string {
+  return barcode.replace(/-\d{2}$/, '');
+}
+
 /** 주문 카드 알약은 공간이 좁아 "직배송/퀵배송" 대신 "직/퀵"으로 줄여 표기(택배는 그대로). */
 const METHOD_SHORT_LABEL: Record<string, string> = { DIRECT: '직', QUICK: '퀵', PARCEL: '택배' };
 
@@ -83,6 +88,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
   const [outboundTarget, setOutboundTarget] = useState<string | null>(null); // reservation id
   const [outboundBarcode, setOutboundBarcode] = useState('');
   const [outboundErr, setOutboundErr] = useState<string | null>(null);
+  const [outboundMismatch, setOutboundMismatch] = useState<{ expected: string; scanned: string } | null>(null);
   const [dateFilter, setDateFilter] = useState(todayISO());
   const [rangeStart, setRangeStart] = useState('');
   const [rangeEnd, setRangeEnd] = useState('');
@@ -189,16 +195,21 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
     setOutboundTarget(reservationId);
     setOutboundBarcode('');
     setOutboundErr(null);
+    setOutboundMismatch(null);
   }
   function submitOutbound() {
     if (!outboundTarget) return;
     if (!outboundBarcode.trim()) { setOutboundErr('바코드를 입력해주세요.'); return; }
     const reservationId = outboundTarget;
     setOutboundErr(null);
+    setOutboundMismatch(null);
     startTransition(async () => {
       const res = await confirmOutbound(reservationId, outboundBarcode);
-      if (res.ok) { setOutboundTarget(null); router.refresh(); }
-      else setOutboundErr(res.reason);
+      if (res.ok) { setOutboundTarget(null); router.refresh(); return; }
+      setOutboundErr(res.reason);
+      if (res.expectedBarcode && res.scannedBarcode) {
+        setOutboundMismatch({ expected: res.expectedBarcode, scanned: res.scannedBarcode });
+      }
     });
   }
 
@@ -303,6 +314,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                     ))}
                   </span>
                 </span>
+                <span className="order-ctrl-divider" />
                 <span className="order-inline-ctrl">
                   <span>배송직원</span>
                   <select className="order-inline-select" value={o.assignedTo ?? ''} disabled={pending} onChange={(e) => assign(o.id, e.target.value)}>
@@ -338,7 +350,12 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                         <div className="order-item-info">
                           <div className="order-item-name-row">
                             <span className="order-item-name">{item.productName}</span>
-                            <span className="order-item-barcode">{item.barcode ?? demoBarcode(item.id)}</span>
+                            {!item.hasIssue && (
+                              <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openIssue(item.id)}>
+                                오염·손상 발생
+                              </button>
+                            )}
+                            <span className="order-item-barcode">{barcodeUpToSize(item.barcode ?? demoBarcode(item.id))}</span>
                             <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openReassign(item.id)}>
                               재배정
                             </button>
@@ -346,8 +363,8 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                           <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                         </div>
                       </div>
-                      <div className="order-item-issue-row">
-                        {item.hasIssue ? (
+                      {item.hasIssue && (
+                        <div className="order-item-issue-row">
                           <span className="order-item-issue-info">
                             <span className="order-item-issue-photos">
                               {item.issuePhotoUrls.map((url, i) => (
@@ -357,12 +374,8 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                             </span>
                             <span className="order-item-issue-reason">{item.issueReason}</span>
                           </span>
-                        ) : (
-                          <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openIssue(item.id)}>
-                            오염·손상 발생
-                          </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -378,6 +391,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                         <div className="order-item-info">
                           <div className="order-item-name-row">
                             <span className="order-item-name">{item.productName}</span>
+                            <span className="order-item-barcode">{item.barcode}</span>
                           </div>
                           <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                         </div>
@@ -387,7 +401,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                         key={item.id}
                         type="button"
                         className="cta"
-                        style={{ margin: 0, width: 'auto', padding: '10px 16px', fontSize: 12.5 }}
+                        style={{ margin: 0, width: 'auto', padding: '6px 12px', fontSize: 11.5 }}
                         disabled={pending}
                         onClick={() => openOutbound(item.id)}
                       >
@@ -509,6 +523,12 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
               onChange={(e) => setOutboundBarcode(e.target.value)}
               autoFocus
             />
+            {outboundMismatch && (
+              <div className="order-outbound-mismatch">
+                <div><span>주문 상품 바코드</span><b>{outboundMismatch.expected}</b></div>
+                <div><span>스캔한 바코드</span><b>{outboundMismatch.scanned}</b></div>
+              </div>
+            )}
             {outboundErr && <p className="hint err">{outboundErr}</p>}
             <div className="wd-btns">
               <button className="cta ghost" onClick={() => setOutboundTarget(null)}>취소</button>

@@ -535,6 +535,10 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 
 /* ===== 관리자: 분쟁 배지 ===== */
 .order-dispute-badge{display:inline-block;margin-left:8px;font-size:10.5px;color:var(--espresso);background:rgba(107,39,55,.12);padding:2px 8px;border-radius:99px;vertical-align:middle}
+.order-outbound-mismatch{margin-top:10px;padding:10px 12px;border-radius:4px;background:rgba(107,39,55,.08);display:flex;flex-direction:column;gap:6px}
+.order-outbound-mismatch div{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--espresso)}
+.order-outbound-mismatch span{opacity:.7}
+.order-outbound-mismatch b{font-family:monospace;font-weight:600}
 .order-dispute-reason-inline{font-size:11px;color:var(--espresso);opacity:.7}
 
 /* ===== 가입 폼 확장 ===== */
