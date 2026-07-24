@@ -513,8 +513,7 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
       {outboundTarget && (
         <div className="wd-ov" onClick={(e) => e.target === e.currentTarget && setOutboundTarget(null)}>
           <div className="wd-box">
-            <div className="wd-title">출고 바코드 등록</div>
-            <p className="wd-desc">실제로 들고 있는 재고 개체의 바코드를 입력해주세요. 이 주문에 배정된 개체와 다르면 등록이 거부됩니다.</p>
+            <div className="wd-title">바코드 스캔 오류</div>
             <input
               className="field"
               style={{ width: '100%' }}
