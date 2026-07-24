@@ -88,10 +88,16 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
 
       <div className="admin-toolbar">
         <input className="admin-search" placeholder="상품명 · 바코드 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <select className="admin-select-filter" value={category} onChange={(e) => setCategory(e.target.value)}>
-          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
         <div className="admin-spacer" />
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {categories.map((c) => (
+            <button key={c} type="button" className="btn-ghost"
+              style={{ padding: '5px 10px', fontSize: 11.5, borderColor: category === c ? 'var(--espresso)' : undefined, color: category === c ? 'var(--espresso)' : undefined }}
+              onClick={() => setCategory(c)}>
+              {c}
+            </button>
+          ))}
+        </div>
         <span className="prod-brand">총 {filtered.length}개</span>
       </div>
 
