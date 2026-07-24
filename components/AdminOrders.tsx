@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import {
   updateFulfillment, assignOrder, openDispute, resolveDispute, saveItemIssue,
-  listSiblingItemsForReservation, reassignReservationItem,
+  listSiblingItemsForReservation, reassignReservationItem, confirmOutbound,
   type OrderRow, type Fulfillment, type SiblingItemRow,
 } from '@lala/shared/lib/staff-actions';
 import { FULFILLMENT_LABEL as LABEL } from '@lala/shared/lib/fulfillment-label';
@@ -80,6 +80,9 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
   const [siblingItems, setSiblingItems] = useState<SiblingItemRow[]>([]);
   const [reassignLoading, setReassignLoading] = useState(false);
   const [reassignErr, setReassignErr] = useState<string | null>(null);
+  const [outboundTarget, setOutboundTarget] = useState<string | null>(null); // reservation id
+  const [outboundBarcode, setOutboundBarcode] = useState('');
+  const [outboundErr, setOutboundErr] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState(todayISO());
   const [rangeStart, setRangeStart] = useState('');
   const [rangeEnd, setRangeEnd] = useState('');
@@ -180,6 +183,22 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
       const res = await reassignReservationItem(reservationId, newItemId);
       if (res.ok) { setReassignTarget(null); router.refresh(); }
       else setReassignErr(res.reason);
+    });
+  }
+  function openOutbound(reservationId: string) {
+    setOutboundTarget(reservationId);
+    setOutboundBarcode('');
+    setOutboundErr(null);
+  }
+  function submitOutbound() {
+    if (!outboundTarget) return;
+    if (!outboundBarcode.trim()) { setOutboundErr('바코드를 입력해주세요.'); return; }
+    const reservationId = outboundTarget;
+    setOutboundErr(null);
+    startTransition(async () => {
+      const res = await confirmOutbound(reservationId, outboundBarcode);
+      if (res.ok) { setOutboundTarget(null); router.refresh(); }
+      else setOutboundErr(res.reason);
     });
   }
 
@@ -348,20 +367,33 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                   ))}
                 </div>
 
-                {/* 출고 상품 목록: 사진/이름/금액만 — 주문 목록과 동일한 항목이지만 바코드·오염 등
-                    출고와 무관한 정보는 뺐다. */}
+                {/* 출고 상품 목록: 미등록이면 바코드 등록 버튼, 등록 완료되면 주문 목록과 같은
+                    사진/이름/금액 노출. 배정된 개체 바코드와 다르면 서버에서 등록 자체를 거부한다. */}
                 <div className="order-item-list">
                   <div className="field-section" style={{ margin: 0 }}>출고 상품 목록</div>
                   {o.items.map((item) => (
-                    <div className="order-item-row" key={item.id}>
-                      <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${item.c2}, ${item.c1})` }} />
-                      <div className="order-item-info">
-                        <div className="order-item-name-row">
-                          <span className="order-item-name">{item.productName}</span>
+                    item.outboundConfirmed ? (
+                      <div className="order-item-row" key={item.id}>
+                        <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${item.c2}, ${item.c1})` }} />
+                        <div className="order-item-info">
+                          <div className="order-item-name-row">
+                            <span className="order-item-name">{item.productName}</span>
+                          </div>
+                          <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                         </div>
-                        <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                       </div>
-                    </div>
+                    ) : (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="cta"
+                        style={{ margin: 0, width: 'auto', padding: '10px 16px', fontSize: 12.5 }}
+                        disabled={pending}
+                        onClick={() => openOutbound(item.id)}
+                      >
+                        등록
+                      </button>
+                    )
                   ))}
                 </div>
               </div>
@@ -459,6 +491,28 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
             {reassignErr && <p className="hint err">{reassignErr}</p>}
             <div className="wd-btns">
               <button className="cta ghost" onClick={() => setReassignTarget(null)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {outboundTarget && (
+        <div className="wd-ov" onClick={(e) => e.target === e.currentTarget && setOutboundTarget(null)}>
+          <div className="wd-box">
+            <div className="wd-title">출고 바코드 등록</div>
+            <p className="wd-desc">실제로 들고 있는 재고 개체의 바코드를 입력해주세요. 이 주문에 배정된 개체와 다르면 등록이 거부됩니다.</p>
+            <input
+              className="field"
+              style={{ width: '100%' }}
+              placeholder="바코드"
+              value={outboundBarcode}
+              onChange={(e) => setOutboundBarcode(e.target.value)}
+              autoFocus
+            />
+            {outboundErr && <p className="hint err">{outboundErr}</p>}
+            <div className="wd-btns">
+              <button className="cta ghost" onClick={() => setOutboundTarget(null)}>취소</button>
+              <button className="cta" disabled={pending} onClick={submitOutbound}>등록</button>
             </div>
           </div>
         </div>
