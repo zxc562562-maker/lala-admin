@@ -37,6 +37,12 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
     return ['전체', ...Array.from(set)];
   }, [products]);
 
+  const categoryCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of products) m.set(p.category, (m.get(p.category) ?? 0) + 1);
+    return m;
+  }, [products]);
+
   const filtered = useMemo(() => {
     return products.filter((p) => {
       const matchesCategory = category === '전체' || p.category === category;
@@ -86,17 +92,18 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
         <button className="btn-primary" onClick={openCreate}>+ 상품 등록</button>
       </div>
 
+      <div className="admin-toolbar" style={{ marginBottom: 10 }}>
+        {categories.map((c) => (
+          <button key={c} type="button" className="btn-ghost"
+            style={{ padding: '5px 10px', fontSize: 11.5, borderColor: category === c ? 'var(--espresso)' : undefined, color: category === c ? 'var(--espresso)' : undefined }}
+            onClick={() => setCategory(c)}>
+            {c === '전체' ? '전체' : `${c} (${categoryCounts.get(c) ?? 0})`}
+          </button>
+        ))}
+      </div>
+
       <div className="admin-toolbar">
         <input className="admin-search" placeholder="상품명 · 바코드 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {categories.map((c) => (
-            <button key={c} type="button" className="btn-ghost"
-              style={{ padding: '5px 10px', fontSize: 11.5, borderColor: category === c ? 'var(--espresso)' : undefined, color: category === c ? 'var(--espresso)' : undefined }}
-              onClick={() => setCategory(c)}>
-              {c}
-            </button>
-          ))}
-        </div>
         <div className="admin-spacer" />
         <span className="prod-brand">총 {filtered.length}개</span>
       </div>

@@ -17,6 +17,7 @@ export default function AdminInventory({ items }: { items: InventoryListRow[] })
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<ItemStatus | '전체'>('전체');
+  const [category, setCategory] = useState('전체');
   const [sortByCondition, setSortByCondition] = useState(true);
 
   useEffect(() => {
@@ -31,16 +32,28 @@ export default function AdminInventory({ items }: { items: InventoryListRow[] })
     const q = query.trim().toLowerCase();
     let list = items.filter((it) => {
       const matchesStatus = status === '전체' || it.status === status;
+      const matchesCategory = category === '전체' || it.productCategory === category;
       const matchesQuery = !q || it.productName.toLowerCase().includes(q) || it.barcode.toLowerCase().includes(q);
-      return matchesStatus && matchesQuery;
+      return matchesStatus && matchesCategory && matchesQuery;
     });
     if (sortByCondition) list = [...list].sort((a, b) => a.condition - b.condition);
     return list;
-  }, [items, query, status, sortByCondition]);
+  }, [items, query, status, category, sortByCondition]);
 
   const counts = useMemo(() => {
     const m = new Map<ItemStatus, number>();
     for (const it of items) m.set(it.status, (m.get(it.status) ?? 0) + 1);
+    return m;
+  }, [items]);
+
+  const categories = useMemo(() => {
+    const set = new Set(items.map((it) => it.productCategory));
+    return ['전체', ...Array.from(set)];
+  }, [items]);
+
+  const categoryCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const it of items) m.set(it.productCategory, (m.get(it.productCategory) ?? 0) + 1);
     return m;
   }, [items]);
 
@@ -56,6 +69,16 @@ export default function AdminInventory({ items }: { items: InventoryListRow[] })
             style={{ padding: '5px 10px', fontSize: 11.5, borderColor: status === s ? 'var(--espresso)' : undefined, color: status === s ? 'var(--espresso)' : undefined }}
             onClick={() => setStatus(s)}>
             {s === '전체' ? '전체' : LABEL[s]} {s !== '전체' && `(${counts.get(s) ?? 0})`}
+          </button>
+        ))}
+      </div>
+
+      <div className="admin-toolbar" style={{ marginBottom: 10 }}>
+        {categories.map((c) => (
+          <button key={c} className="btn-ghost"
+            style={{ padding: '5px 10px', fontSize: 11.5, borderColor: category === c ? 'var(--espresso)' : undefined, color: category === c ? 'var(--espresso)' : undefined }}
+            onClick={() => setCategory(c)}>
+            {c === '전체' ? '전체' : `${c} (${categoryCounts.get(c) ?? 0})`}
           </button>
         ))}
       </div>
