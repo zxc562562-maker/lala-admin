@@ -525,10 +525,10 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
             {outboundMismatch && (
               <div className="order-outbound-mismatch">
                 <div><span>주문 상품 바코드</span><b>{outboundMismatch.expected}</b></div>
-                <div><span>스캔한 바코드</span><b>{outboundMismatch.scanned}</b></div>
+                <div><span>출고 상품 바코드</span><b>{outboundMismatch.scanned}</b></div>
               </div>
             )}
-            {outboundErr && <p className="hint err">{outboundErr}</p>}
+            {outboundErr && !outboundMismatch && <p className="hint err">{outboundErr}</p>}
             <div className="wd-btns">
               <button className="cta ghost" onClick={() => setOutboundTarget(null)}>취소</button>
               <button className="cta" disabled={pending} onClick={submitOutbound}>등록</button>
