@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import {
   updateFulfillment, assignOrder, openDispute, resolveDispute, saveItemIssue,
-  listSiblingItemsForReservation, reassignReservationItem, confirmOutbound,
-  type OrderRow, type Fulfillment, type SiblingItemRow,
+  listSiblingItemsForReservation, reassignReservationItem, confirmOutbound, clearOutbound,
+  type OrderRow, type OrderItemRow, type Fulfillment, type SiblingItemRow,
 } from '@lala/shared/lib/staff-actions';
 import { FULFILLMENT_LABEL as LABEL } from '@lala/shared/lib/fulfillment-label';
 import { getDeliverySlotLabel } from '@lala/shared/lib/delivery';
@@ -89,6 +89,12 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
   const [outboundBarcode, setOutboundBarcode] = useState('');
   const [outboundErr, setOutboundErr] = useState<string | null>(null);
   const [outboundMismatch, setOutboundMismatch] = useState<{ expected: string; scanned: string } | null>(null);
+  const [editTarget, setEditTarget] = useState<string | null>(null); // reservation id
+  const [editExpectedBarcode, setEditExpectedBarcode] = useState('');
+  const [editCurrentBarcode, setEditCurrentBarcode] = useState('');
+  const [editNewBarcode, setEditNewBarcode] = useState('');
+  const [editErr, setEditErr] = useState<string | null>(null);
+  const [editMismatch, setEditMismatch] = useState<{ expected: string; scanned: string } | null>(null);
   const [dateFilter, setDateFilter] = useState(todayISO());
   const [rangeStart, setRangeStart] = useState('');
   const [rangeEnd, setRangeEnd] = useState('');
@@ -211,6 +217,33 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
         setOutboundMismatch({ expected: res.expectedBarcode, scanned: res.scannedBarcode });
       }
     });
+  }
+  function openEditOutbound(item: OrderItemRow) {
+    setEditTarget(item.id);
+    setEditExpectedBarcode(item.barcode ?? '');
+    setEditCurrentBarcode(item.outboundBarcode ?? '');
+    setEditNewBarcode('');
+    setEditErr(null);
+    setEditMismatch(null);
+  }
+  function submitEditOutbound() {
+    if (!editTarget) return;
+    if (!editNewBarcode.trim()) { setEditErr('수정할 바코드를 입력해주세요.'); return; }
+    const reservationId = editTarget;
+    setEditErr(null);
+    setEditMismatch(null);
+    startTransition(async () => {
+      const res = await confirmOutbound(reservationId, editNewBarcode);
+      if (res.ok) { setEditTarget(null); router.refresh(); return; }
+      setEditErr(res.reason);
+      if (res.expectedBarcode && res.scannedBarcode) {
+        setEditMismatch({ expected: res.expectedBarcode, scanned: res.scannedBarcode });
+      }
+    });
+  }
+  function deleteOutbound(reservationId: string) {
+    if (!confirm('출고 등록을 삭제할까요? 다시 등록 버튼이 노출됩니다.')) return;
+    startTransition(async () => { await clearOutbound(reservationId); router.refresh(); });
   }
 
   return (
@@ -391,7 +424,13 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
                         <div className="order-item-info">
                           <div className="order-item-name-row">
                             <span className="order-item-name">{item.productName}</span>
-                            <span className="order-item-barcode">{item.barcode}</span>
+                            <span className="order-item-barcode">{item.outboundBarcode ?? item.barcode}</span>
+                            <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => openEditOutbound(item)}>
+                              수정
+                            </button>
+                            <button type="button" className="order-item-issue-btn" disabled={pending} onClick={() => deleteOutbound(item.id)}>
+                              삭제
+                            </button>
                           </div>
                           <div className="order-item-price">{won(item.dailyPrice)} /일</div>
                         </div>
@@ -533,6 +572,44 @@ export default function AdminOrders({ orders, staff }: { orders: OrderRow[]; sta
             {outboundErr && !outboundMismatch && <p className="hint err">{outboundErr}</p>}
             <div className="wd-btns">
               <button className="cta ghost" onClick={() => setOutboundTarget(null)}>취소</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editTarget && (
+        <div className="wd-ov" onClick={(e) => e.target === e.currentTarget && setEditTarget(null)}>
+          <div className="wd-box">
+            <div className="wd-title">출고 바코드 수정</div>
+            <div className="field-group">
+              <label>주문 상품 바코드</label>
+              <input className="field" value={editExpectedBarcode} readOnly />
+            </div>
+            <div className="field-group" style={{ marginTop: 10 }}>
+              <label>출고 상품 바코드</label>
+              <input className="field" value={editCurrentBarcode} readOnly />
+            </div>
+            <div className="field-group" style={{ marginTop: 10 }}>
+              <label>수정 상품 바코드</label>
+              <input
+                className="field"
+                placeholder="바코드 스캔"
+                value={editNewBarcode}
+                onChange={(e) => setEditNewBarcode(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') submitEditOutbound(); }}
+                disabled={pending}
+                autoFocus
+              />
+            </div>
+            {editMismatch && (
+              <div className="order-outbound-mismatch">
+                <div><span>주문 상품 바코드</span><b>{editMismatch.expected}</b></div>
+                <div><span>출고 상품 바코드</span><b>{editMismatch.scanned}</b></div>
+              </div>
+            )}
+            {editErr && !editMismatch && <p className="hint err">{editErr}</p>}
+            <div className="wd-btns">
+              <button className="cta ghost" onClick={() => setEditTarget(null)}>취소</button>
             </div>
           </div>
         </div>
