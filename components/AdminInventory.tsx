@@ -73,7 +73,7 @@ export default function AdminInventory({ items }: { items: InventoryListRow[] })
         ))}
       </div>
 
-      <div className="admin-toolbar" style={{ marginBottom: 10 }}>
+      <div className="admin-toolbar">
         {categories.map((c) => (
           <button key={c} className="btn-ghost"
             style={{ padding: '5px 10px', fontSize: 11.5, borderColor: category === c ? 'var(--espresso)' : undefined, color: category === c ? 'var(--espresso)' : undefined }}
@@ -81,11 +81,9 @@ export default function AdminInventory({ items }: { items: InventoryListRow[] })
             {c === '전체' ? '전체' : `${c} (${categoryCounts.get(c) ?? 0})`}
           </button>
         ))}
-      </div>
-
-      <div className="admin-toolbar">
-        <input className="admin-search" placeholder="바코드 · 상품명 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <button className="btn-ghost" onClick={() => setSortByCondition((v) => !v)}>
+        <input className="admin-search" style={{ padding: '5px 10px', fontSize: 11.5, minWidth: 160 }}
+          placeholder="바코드 · 상품명 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <button className="btn-ghost" style={{ padding: '5px 10px', fontSize: 11.5 }} onClick={() => setSortByCondition((v) => !v)}>
           {sortByCondition ? '컨디션 낮은순 ✓' : '컨디션 정렬 끔'}
         </button>
         <div className="admin-spacer" />
@@ -96,7 +94,7 @@ export default function AdminInventory({ items }: { items: InventoryListRow[] })
         <p className="staff-empty">조건에 맞는 재고 개체가 없습니다.</p>
       ) : (
         <div className="dtable-wrap">
-          <table className="dtable">
+          <table className="dtable dtable-compact">
             <thead>
               <tr><th>이미지</th><th>카테고리</th><th>상품</th><th>사이즈</th><th>상태</th><th className="num">컨디션</th><th className="num">누적 대여</th><th></th></tr>
             </thead>

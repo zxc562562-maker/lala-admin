@@ -92,7 +92,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
         <button className="btn-primary" onClick={openCreate}>+ 상품 등록</button>
       </div>
 
-      <div className="admin-toolbar" style={{ marginBottom: 10 }}>
+      <div className="admin-toolbar">
         {categories.map((c) => (
           <button key={c} type="button" className="btn-ghost"
             style={{ padding: '5px 10px', fontSize: 11.5, borderColor: category === c ? 'var(--espresso)' : undefined, color: category === c ? 'var(--espresso)' : undefined }}
@@ -100,10 +100,8 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
             {c === '전체' ? '전체' : `${c} (${categoryCounts.get(c) ?? 0})`}
           </button>
         ))}
-      </div>
-
-      <div className="admin-toolbar">
-        <input className="admin-search" placeholder="상품명 · 바코드 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input className="admin-search" style={{ padding: '5px 10px', fontSize: 11.5, minWidth: 160 }}
+          placeholder="상품명 · 바코드 검색" value={query} onChange={(e) => setQuery(e.target.value)} />
         <div className="admin-spacer" />
         <span className="prod-brand">총 {filtered.length}개</span>
       </div>
@@ -112,7 +110,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
         <p className="staff-empty">등록된 상품이 없습니다.</p>
       ) : (
         <div className="dtable-wrap">
-          <table className="dtable">
+          <table className="dtable dtable-compact">
             <thead>
               <tr>
                 <th>이미지</th><th>카테고리</th><th>상품</th><th>사이즈</th>

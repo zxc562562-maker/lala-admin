@@ -442,6 +442,10 @@ html{scroll-snap-type:y mandatory;scroll-padding-top:152px}
 .dtable tbody tr:last-child td{border-bottom:none}
 .dtable tbody tr:hover{background:#FBF9F6}
 .dtable .num{text-align:right;font-variant-numeric:tabular-nums}
+/* 상품관리·재고관리 전용 — 오른쪽 여백이 남더라도 좌우 칸 간격을 좁혀 표를 촘촘하게 */
+.dtable-compact{width:auto}
+.dtable-compact thead th{padding-left:10px;padding-right:10px}
+.dtable-compact tbody td{padding-left:10px;padding-right:10px}
 .swatch-pair{display:inline-flex;border-radius:50%;overflow:hidden;width:18px;height:18px;border:1px solid var(--line)}
 .swatch-pair span{width:9px;height:18px}
 .prod-name{font-weight:500;color:var(--espresso)}
