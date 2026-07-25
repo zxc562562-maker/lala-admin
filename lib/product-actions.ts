@@ -6,6 +6,11 @@ import { getAccess } from '@lala/shared/lib/roles';
 import { canTransition, type ItemStatus } from '@lala/shared/lib/domain/inventory';
 import type { Product } from '@lala/shared/lib/types';
 import { STYLE_OPTIONS, type Style } from '@lala/shared/lib/style';
+import { PRODUCT_IMAGE_BUCKET, getProductImageUrl } from '@lala/shared/lib/storage';
+
+const PRODUCT_IMAGE_MIME_EXT: Record<string, string> = {
+  'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif',
+};
 
 const PRODUCT_SELECT = 'id,name,brand,category,size,color_name,daily_price,deposit,color_1,color_2,product_style(style)';
 
@@ -276,4 +281,72 @@ export async function listInventoryItems(filter?: InventoryListFilter): Promise<
   const search = filter?.search?.trim().toLowerCase();
   if (!search) return rows;
   return rows.filter((r) => r.barcode.toLowerCase().includes(search) || r.productName.toLowerCase().includes(search));
+}
+
+/** 룩북 등록 팝업의 "상품 등록" 섹션에서, 이미 등록된 상품을 고르면 기존 사진을 미리 보여주기 위함. */
+export async function getProductPhotos(productId: string): Promise<{ imagePath: string | null; imageUrl: string | null; gallery: { path: string; url: string }[] }> {
+  const me = await getAccess();
+  if (!me?.isApprover) return { imagePath: null, imageUrl: null, gallery: [] };
+  const sb = supabaseAdmin();
+  const [{ data: product }, { data: images }] = await Promise.all([
+    sb.from('product').select('image_url').eq('id', productId).maybeSingle(),
+    sb.from('product_image').select('path').eq('product_id', productId).order('position', { ascending: true }),
+  ]);
+  return {
+    imagePath: product?.image_url ?? null,
+    imageUrl: getProductImageUrl(product?.image_url ?? null),
+    gallery: (images ?? []).map((i: { path: string }) => ({ path: i.path, url: getProductImageUrl(i.path)! })),
+  };
+}
+
+/** 룩북 등록 팝업의 "상품 등록" 섹션에서 쓰는, 서버를 거치지 않는 직접 업로드용 서명 티켓. */
+export async function createProductImageUploadTicket(
+  contentType: string,
+): Promise<{ ok: true; path: string; token: string } | { ok: false; reason: string }> {
+  const me = await getAccess();
+  if (!me?.isApprover) return { ok: false, reason: '권한이 없습니다.' };
+
+  const ext = PRODUCT_IMAGE_MIME_EXT[contentType];
+  if (!ext) return { ok: false, reason: '이미지 파일만 업로드할 수 있어요.' };
+
+  const path = `${crypto.randomUUID()}${ext}`;
+  const sb = supabaseAdmin();
+  const { data, error } = await sb.storage.from(PRODUCT_IMAGE_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) return { ok: false, reason: '업로드 준비에 실패했어요.' };
+  return { ok: true, path, token: data.token };
+}
+
+export interface ProductPhotoInput {
+  productId: string;
+  imagePath: string | null; // 썸네일(product.image_url)
+  galleryPaths: string[];   // product_image, 노출 순서대로
+}
+
+/** 상품 썸네일/갤러리를 통째로 교체. 이미지는 이미 업로드된 경로만 받는다(파일 자체는 안 받음). */
+export async function updateProductPhotos(input: ProductPhotoInput): Promise<{ ok: boolean; reason?: string }> {
+  const me = await getAccess();
+  if (!me?.isApprover) return { ok: false, reason: '권한이 없습니다.' };
+
+  const sb = supabaseAdmin();
+  const { data: current } = await sb.from('product').select('image_url').eq('id', input.productId).maybeSingle();
+  if (!current) return { ok: false, reason: '상품을 찾을 수 없어요.' };
+
+  if (current.image_url && current.image_url !== input.imagePath) {
+    await sb.storage.from(PRODUCT_IMAGE_BUCKET).remove([current.image_url]);
+  }
+  const { error } = await sb.from('product').update({ image_url: input.imagePath }).eq('id', input.productId);
+  if (error) return { ok: false, reason: '저장에 실패했어요.' };
+
+  const { data: existingImages } = await sb.from('product_image').select('path').eq('product_id', input.productId);
+  const removedPaths = (existingImages ?? []).map((i: { path: string }) => i.path).filter((p) => !input.galleryPaths.includes(p));
+  if (removedPaths.length > 0) await sb.storage.from(PRODUCT_IMAGE_BUCKET).remove(removedPaths);
+
+  await sb.from('product_image').delete().eq('product_id', input.productId);
+  if (input.galleryPaths.length > 0) {
+    await sb.from('product_image').insert(input.galleryPaths.map((path, i) => ({ product_id: input.productId, path, position: i })));
+  }
+
+  revalidatePath('/admin/products');
+  revalidatePath(`/admin/products/${input.productId}`);
+  return { ok: true };
 }

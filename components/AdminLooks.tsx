@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import { STYLE_OPTIONS, type Style } from '@lala/shared/lib/style';
@@ -8,11 +8,13 @@ import {
   createLook, updateLook, deleteLook, getLook, createLookImageUploadTicket,
   type LookListRow, type LookItemOption, type LookDetail,
 } from '@/lib/look-actions';
+import { createProductImageUploadTicket, updateProductPhotos, getProductPhotos } from '@/lib/product-actions';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const LOOK_IMAGE_BUCKET = 'look-images';
-// service 앱에서 룩북 이미지가 전부 같은 비율로 깔끔하게 정렬되도록, 화면에 실제로 쓰이는
-// 4:5(1080x1350) 크기로 고정한다 — 원본 비율이 다르면 가운데를 기준으로 크롭해서 맞춘다.
+const PRODUCT_IMAGE_BUCKET = 'product-images';
+// service 앱에서 이미지가 전부 같은 비율로 깔끔하게 정렬되도록, 화면에 실제로 쓰이는 4:5(1080x1350)
+// 크기로 고정한다 — 원본 비율이 다르면 가운데를 기준으로 크롭해서 맞춘다.
 const TARGET_WIDTH = 1080;
 const TARGET_HEIGHT = 1350;
 const RESIZE_QUALITY = 0.82;
@@ -51,31 +53,45 @@ async function resizeForUpload(file: File): Promise<File> {
   }
 }
 
+type UploadTicketFn = (contentType: string) => Promise<{ ok: true; path: string; token: string } | { ok: false; reason: string }>;
+
 /** 리사이즈 후 서버에서 서명 업로드 티켓을 받아 브라우저에서 Supabase Storage로 바로 올린다(서버 경유 없음). */
-async function uploadDirect(rawFile: File): Promise<{ ok: true; path: string } | { ok: false; reason: string }> {
+async function uploadDirect(
+  rawFile: File, bucket: string, createTicket: UploadTicketFn,
+): Promise<{ ok: true; path: string } | { ok: false; reason: string }> {
   if (!rawFile.type.startsWith('image/')) return { ok: false, reason: '이미지 파일만 업로드할 수 있어요.' };
   const file = await resizeForUpload(rawFile);
   if (file.size > MAX_IMAGE_BYTES) return { ok: false, reason: '파일 크기는 10MB 이하로 올려주세요.' };
-  const ticket = await createLookImageUploadTicket(file.type);
+  const ticket = await createTicket(file.type);
   if (!ticket.ok) return ticket;
   const sb = supabaseBrowser();
-  const { error } = await sb.storage.from(LOOK_IMAGE_BUCKET).uploadToSignedUrl(ticket.path, ticket.token, file);
+  const { error } = await sb.storage.from(bucket).uploadToSignedUrl(ticket.path, ticket.token, file);
   if (error) return { ok: false, reason: '이미지 업로드에 실패했어요.' };
   return { ok: true, path: ticket.path };
 }
+const uploadLookImageDirect = (f: File) => uploadDirect(f, LOOK_IMAGE_BUCKET, createLookImageUploadTicket);
+const uploadProductImageDirect = (f: File) => uploadDirect(f, PRODUCT_IMAGE_BUCKET, createProductImageUploadTicket);
 
 interface GalleryImage { path: string; url: string }
 
+interface ProductPhotoEntry {
+  productId: string;
+  thumbnailPath: string | null;
+  thumbnailPreview: string | null;
+  gallery: GalleryImage[];
+}
+const EMPTY_PRODUCT_ENTRY: ProductPhotoEntry = { productId: '', thumbnailPath: null, thumbnailPreview: null, gallery: [] };
+
 interface FormState {
   styles: Style[];
-  itemProductIds: string[];
   coverPath: string | null;
   coverPreview: string | null;
   gallery: GalleryImage[];
+  productPhotos: ProductPhotoEntry[];
 }
 
 const EMPTY_FORM: FormState = {
-  styles: [], itemProductIds: [], coverPath: null, coverPreview: null, gallery: [],
+  styles: [], coverPath: null, coverPreview: null, gallery: [], productPhotos: [],
 };
 
 export default function AdminLooks({ looks, productOptions }: { looks: LookListRow[]; productOptions: LookItemOption[] }) {
@@ -86,7 +102,6 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
-  const [productQuery, setProductQuery] = useState('');
 
   useEffect(() => {
     const sb = supabaseBrowser();
@@ -101,33 +116,33 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
 
   const busy = pending || uploading;
 
-  const filteredProducts = useMemo(() => {
-    const q = productQuery.trim().toLowerCase();
-    if (!q) return productOptions;
-    return productOptions.filter((p) => p.name.toLowerCase().includes(q));
-  }, [productOptions, productQuery]);
-
   function openCreate() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setFormError(null);
-    setProductQuery('');
     setDrawerOpen(true);
   }
 
   function openEdit(id: string) {
     setEditingId(id);
     setFormError(null);
-    setProductQuery('');
     setDrawerOpen(true);
     startTransition(async () => {
       const detail: LookDetail | null = await getLook(id);
       if (!detail) { setFormError('룩북 정보를 불러오지 못했어요.'); return; }
+      const productPhotos = await Promise.all(detail.items.map(async (item): Promise<ProductPhotoEntry> => {
+        const photos = await getProductPhotos(item.productId);
+        return {
+          productId: item.productId,
+          thumbnailPath: photos.imagePath, thumbnailPreview: photos.imageUrl,
+          gallery: photos.gallery,
+        };
+      }));
       setForm({
         styles: detail.styles,
-        itemProductIds: detail.items.map((i) => i.productId),
         coverPath: detail.coverPath, coverPreview: detail.coverUrl,
         gallery: detail.galleryImages,
+        productPhotos,
       });
     });
   }
@@ -144,7 +159,7 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
     setUploading(true);
     setFormError(null);
     const preview = URL.createObjectURL(file);
-    const res = await uploadDirect(file);
+    const res = await uploadLookImageDirect(file);
     setUploading(false);
     if (!res.ok) { setFormError(res.reason); return; }
     setForm((f) => ({ ...f, coverPath: res.path, coverPreview: preview }));
@@ -157,7 +172,7 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
     setUploading(true);
     setFormError(null);
     // 브라우저 → Supabase 직접 업로드라 서버 왕복이 없어 병렬로 올려도 안전함
-    const results = await Promise.all(files.map(async (file) => ({ file, res: await uploadDirect(file) })));
+    const results = await Promise.all(files.map(async (file) => ({ file, res: await uploadLookImageDirect(file) })));
     for (const { file, res } of results) {
       if (!res.ok) { setFormError(res.reason); continue; }
       setForm((f) => ({ ...f, gallery: [...f.gallery, { path: res.path, url: URL.createObjectURL(file) }] }));
@@ -173,19 +188,64 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
     setForm((f) => ({ ...f, styles: f.styles.includes(s) ? f.styles.filter((x) => x !== s) : [...f.styles, s] }));
   }
 
-  function toggleProduct(productId: string) {
+  function addProductEntry() {
+    setForm((f) => ({ ...f, productPhotos: [...f.productPhotos, { ...EMPTY_PRODUCT_ENTRY }] }));
+  }
+
+  function removeProductEntry(index: number) {
+    setForm((f) => ({ ...f, productPhotos: f.productPhotos.filter((_, i) => i !== index) }));
+  }
+
+  function setProductEntryId(index: number, productId: string) {
+    setForm((f) => ({ ...f, productPhotos: f.productPhotos.map((p, i) => (i === index ? { ...p, productId } : p)) }));
+  }
+
+  async function pickProductThumbnail(index: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    setFormError(null);
+    const preview = URL.createObjectURL(file);
+    const res = await uploadProductImageDirect(file);
+    setUploading(false);
+    if (!res.ok) { setFormError(res.reason); return; }
     setForm((f) => ({
       ...f,
-      itemProductIds: f.itemProductIds.includes(productId)
-        ? f.itemProductIds.filter((id) => id !== productId)
-        : [...f.itemProductIds, productId],
+      productPhotos: f.productPhotos.map((p, i) => (i === index ? { ...p, thumbnailPath: res.path, thumbnailPreview: preview } : p)),
+    }));
+  }
+
+  async function pickProductGallery(index: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    setUploading(true);
+    setFormError(null);
+    const results = await Promise.all(files.map(async (file) => ({ file, res: await uploadProductImageDirect(file) })));
+    for (const { file, res } of results) {
+      if (!res.ok) { setFormError(res.reason); continue; }
+      setForm((f) => ({
+        ...f,
+        productPhotos: f.productPhotos.map((p, i) => (i === index ? { ...p, gallery: [...p.gallery, { path: res.path, url: URL.createObjectURL(file) }] } : p)),
+      }));
+    }
+    setUploading(false);
+  }
+
+  function removeProductGalleryImage(index: number, path: string) {
+    setForm((f) => ({
+      ...f,
+      productPhotos: f.productPhotos.map((p, i) => (i === index ? { ...p, gallery: p.gallery.filter((g) => g.path !== path) } : p)),
     }));
   }
 
   function submit() {
     setFormError(null);
+    const validProducts = form.productPhotos.filter((p) => p.productId);
     const input = {
-      styles: form.styles, itemProductIds: form.itemProductIds,
+      styles: form.styles,
+      itemProductIds: validProducts.map((p) => p.productId),
       coverPath: form.coverPath, galleryPaths: form.gallery.map((g) => g.path),
     };
     startTransition(async () => {
@@ -194,6 +254,9 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
         setFormError(result.reason ?? '저장에 실패했습니다.');
         return;
       }
+      await Promise.all(validProducts.map((p) => updateProductPhotos({
+        productId: p.productId, imagePath: p.thumbnailPath, galleryPaths: p.gallery.map((g) => g.path),
+      })));
       setDrawerOpen(false);
       router.refresh();
     });
@@ -269,7 +332,7 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
             </div>
 
             <div className="field-group">
-              <label>갤러리 이미지</label>
+              <label>룩북 갤러리</label>
               <input type="file" accept="image/*" multiple onChange={pickGallery} disabled={busy} />
               {form.gallery.length > 0 && (
                 <div className="order-item-issue-preview-row">
@@ -283,23 +346,50 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
                   ))}
                 </div>
               )}
-              {uploading && <p className="hint">업로드 중…</p>}
             </div>
 
-            <div className="field-group">
-              <label>구성 상품 ({form.itemProductIds.length}개 선택됨)</label>
-              <input className="field" placeholder="상품명 검색" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} />
-              <div style={{ maxHeight: 180, overflowY: 'auto', marginTop: 6, border: '1px solid var(--line)', borderRadius: 8, padding: 6 }}>
-                {filteredProducts.map((p) => (
-                  <label key={p.productId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', fontSize: 12.5, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={form.itemProductIds.includes(p.productId)} onChange={() => toggleProduct(p.productId)} />
-                    {p.name} <span style={{ color: 'var(--muted)' }}>· {p.category} · {p.size}</span>
-                  </label>
-                ))}
-                {filteredProducts.length === 0 && <p className="staff-empty" style={{ padding: 8 }}>검색 결과가 없어요.</p>}
+            <label style={{ display: 'block', marginTop: 18 }}>상품 등록</label>
+            {form.productPhotos.map((entry, index) => (
+              <div key={index} className="dtable-wrap" style={{ padding: 12, marginTop: 8 }}>
+                <div className="field-group">
+                  <label>상품</label>
+                  <select className="field" value={entry.productId} onChange={(e) => setProductEntryId(index, e.target.value)}>
+                    <option value="">상품 선택</option>
+                    {productOptions.map((p) => (
+                      <option key={p.productId} value={p.productId}>{p.name} · {p.category} · {p.size}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field-group">
+                  <label>상품 썸네일</label>
+                  <input type="file" accept="image/*" onChange={(e) => pickProductThumbnail(index, e)} disabled={busy} />
+                  {entry.thumbnailPreview && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={entry.thumbnailPreview} alt="" className="order-item-issue-photo" style={{ marginTop: 8 }} />
+                  )}
+                </div>
+                <div className="field-group">
+                  <label>상품 갤러리</label>
+                  <input type="file" accept="image/*" multiple onChange={(e) => pickProductGallery(index, e)} disabled={busy} />
+                  {entry.gallery.length > 0 && (
+                    <div className="order-item-issue-preview-row">
+                      {entry.gallery.map((g) => (
+                        <div key={g.path} style={{ position: 'relative' }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={g.url} alt="" className="order-item-issue-photo" />
+                          <button type="button" className="cart-x" style={{ position: 'absolute', top: -6, right: -6 }}
+                            onClick={() => removeProductGalleryImage(index, g.path)} aria-label="삭제">×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button type="button" className="btn-ghost" onClick={() => removeProductEntry(index)}>이 상품 제거</button>
               </div>
-            </div>
+            ))}
+            <button type="button" className="btn-ghost" style={{ marginTop: 8 }} onClick={addProductEntry}>+ 상품 추가</button>
 
+            {uploading && <p className="hint" style={{ marginTop: 8 }}>업로드 중…</p>}
             {formError && <p style={{ fontSize: 12 }}>{formError}</p>}
 
             <div className="drawer-actions">
