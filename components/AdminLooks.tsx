@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import { STYLE_OPTIONS, type Style } from '@lala/shared/lib/style';
 import {
   createLook, updateLook, deleteLook, getLook, createLookImageUploadTicket,
-  type LookListRow, type LookDetail,
+  type LookListRow, type LookItemOption, type LookDetail,
 } from '@/lib/look-actions';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -68,16 +68,17 @@ interface GalleryImage { path: string; url: string }
 
 interface FormState {
   styles: Style[];
+  itemProductIds: string[];
   coverPath: string | null;
   coverPreview: string | null;
   gallery: GalleryImage[];
 }
 
 const EMPTY_FORM: FormState = {
-  styles: [], coverPath: null, coverPreview: null, gallery: [],
+  styles: [], itemProductIds: [], coverPath: null, coverPreview: null, gallery: [],
 };
 
-export default function AdminLooks({ looks }: { looks: LookListRow[] }) {
+export default function AdminLooks({ looks, productOptions }: { looks: LookListRow[]; productOptions: LookItemOption[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
@@ -85,6 +86,7 @@ export default function AdminLooks({ looks }: { looks: LookListRow[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
+  const [productQuery, setProductQuery] = useState('');
 
   useEffect(() => {
     const sb = supabaseBrowser();
@@ -92,28 +94,38 @@ export default function AdminLooks({ looks }: { looks: LookListRow[] }) {
       .channel('admin-looks')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'look' }, () => router.refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'look_style' }, () => router.refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'look_item' }, () => router.refresh())
       .subscribe();
     return () => { sb.removeChannel(ch); };
   }, [router]);
 
   const busy = pending || uploading;
 
+  const filteredProducts = useMemo(() => {
+    const q = productQuery.trim().toLowerCase();
+    if (!q) return productOptions;
+    return productOptions.filter((p) => p.name.toLowerCase().includes(q));
+  }, [productOptions, productQuery]);
+
   function openCreate() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setFormError(null);
+    setProductQuery('');
     setDrawerOpen(true);
   }
 
   function openEdit(id: string) {
     setEditingId(id);
     setFormError(null);
+    setProductQuery('');
     setDrawerOpen(true);
     startTransition(async () => {
       const detail: LookDetail | null = await getLook(id);
       if (!detail) { setFormError('룩북 정보를 불러오지 못했어요.'); return; }
       setForm({
         styles: detail.styles,
+        itemProductIds: detail.items.map((i) => i.productId),
         coverPath: detail.coverPath, coverPreview: detail.coverUrl,
         gallery: detail.galleryImages,
       });
@@ -161,9 +173,21 @@ export default function AdminLooks({ looks }: { looks: LookListRow[] }) {
     setForm((f) => ({ ...f, styles: f.styles.includes(s) ? f.styles.filter((x) => x !== s) : [...f.styles, s] }));
   }
 
+  function toggleProduct(productId: string) {
+    setForm((f) => ({
+      ...f,
+      itemProductIds: f.itemProductIds.includes(productId)
+        ? f.itemProductIds.filter((id) => id !== productId)
+        : [...f.itemProductIds, productId],
+    }));
+  }
+
   function submit() {
     setFormError(null);
-    const input = { styles: form.styles, coverPath: form.coverPath, galleryPaths: form.gallery.map((g) => g.path) };
+    const input = {
+      styles: form.styles, itemProductIds: form.itemProductIds,
+      coverPath: form.coverPath, galleryPaths: form.gallery.map((g) => g.path),
+    };
     startTransition(async () => {
       const result = editingId ? await updateLook(editingId, input) : await createLook(input);
       if (!result.ok) {
@@ -260,6 +284,20 @@ export default function AdminLooks({ looks }: { looks: LookListRow[] }) {
                 </div>
               )}
               {uploading && <p className="hint">업로드 중…</p>}
+            </div>
+
+            <div className="field-group">
+              <label>구성 상품 ({form.itemProductIds.length}개 선택됨)</label>
+              <input className="field" placeholder="상품명 검색" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} />
+              <div style={{ maxHeight: 180, overflowY: 'auto', marginTop: 6, border: '1px solid var(--line)', borderRadius: 8, padding: 6 }}>
+                {filteredProducts.map((p) => (
+                  <label key={p.productId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', fontSize: 12.5, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.itemProductIds.includes(p.productId)} onChange={() => toggleProduct(p.productId)} />
+                    {p.name} <span style={{ color: 'var(--muted)' }}>· {p.category} · {p.size}</span>
+                  </label>
+                ))}
+                {filteredProducts.length === 0 && <p className="staff-empty" style={{ padding: 8 }}>검색 결과가 없어요.</p>}
+              </div>
             </div>
 
             {formError && <p style={{ fontSize: 12 }}>{formError}</p>}

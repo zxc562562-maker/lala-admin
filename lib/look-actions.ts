@@ -19,12 +19,15 @@ export interface LookListRow {
   styles: Style[];
 }
 
+export interface LookItemOption { productId: string; name: string; category: string; size: string }
+
 export interface LookDetail {
   id: string;
   coverPath: string | null;
   coverUrl: string | null;
   galleryImages: { path: string; url: string }[];
   styles: Style[];
+  items: LookItemOption[];
 }
 
 export async function listLooks(): Promise<LookListRow[]> {
@@ -51,9 +54,10 @@ export async function getLook(id: string): Promise<LookDetail | null> {
   const { data: look, error } = await sb.from('look').select('id,cover_path').eq('id', id).maybeSingle();
   if (error || !look) return null;
 
-  const [{ data: images }, { data: styles }] = await Promise.all([
+  const [{ data: images }, { data: styles }, { data: items }] = await Promise.all([
     sb.from('look_image').select('path').eq('look_id', id).order('position', { ascending: true }),
     sb.from('look_style').select('style').eq('look_id', id),
+    sb.from('look_item').select('position,product:product_id(id,name,category,size)').eq('look_id', id).order('position', { ascending: true }),
   ]);
 
   return {
@@ -62,7 +66,21 @@ export async function getLook(id: string): Promise<LookDetail | null> {
     coverUrl: getLookImageUrl(look.cover_path),
     galleryImages: (images ?? []).map((i: { path: string }) => ({ path: i.path, url: getLookImageUrl(i.path)! })),
     styles: (styles ?? []).map((s: { style: Style }) => s.style),
+    items: ((items ?? []) as unknown as { product: { id: string; name: string; category: string; size: string } | null }[])
+      .filter((i) => i.product)
+      .map((i) => ({ productId: i.product!.id, name: i.product!.name, category: i.product!.category, size: i.product!.size })),
   };
+}
+
+/** 상품 선택기용 — 전체 상품을 이름순으로. */
+export async function listProductOptions(): Promise<LookItemOption[]> {
+  const me = await getAccess();
+  if (!me?.isApprover) return [];
+  const sb = supabaseAdmin();
+  const { data } = await sb.from('product').select('id,name,category,size').order('name', { ascending: true });
+  return (data ?? []).map((p: { id: string; name: string; category: string; size: string }) => ({
+    productId: p.id, name: p.name, category: p.category, size: p.size,
+  }));
 }
 
 /** 룩의 스타일 태그를 통째로 교체(현재 목록 삭제 후 선택된 것만 다시 삽입) — product-actions.ts와 동일 패턴. */
@@ -97,11 +115,12 @@ export async function createLookImageUploadTicket(
 
 export interface LookInput {
   styles: Style[];
+  itemProductIds: string[];
   coverPath: string | null;
   galleryPaths: string[]; // 이미 uploadLookImage로 올려둔 경로들, 노출 순서대로
 }
 
-/** 룩북 등록 — 이미지는 이미 업로드된 경로만 받는다(파일 자체는 안 받음). 제목/설명/구성 상품 없이 스타일+이미지만. */
+/** 룩북 등록 — 이미지는 이미 업로드된 경로만 받는다(파일 자체는 안 받음). 제목/설명 없이 스타일+이미지+구성 상품만. */
 export async function createLook(input: LookInput): Promise<{ ok: boolean; reason?: string; id?: string }> {
   const me = await getAccess();
   if (!me?.isApprover) return { ok: false, reason: '권한이 없습니다.' };
@@ -118,6 +137,9 @@ export async function createLook(input: LookInput): Promise<{ ok: boolean; reaso
       ? sb.from('look_image').insert(input.galleryPaths.map((path, i) => ({ look_id: row.id, path, position: i })))
       : Promise.resolve(),
     replaceLookStyles(sb, row.id, input.styles),
+    input.itemProductIds.length > 0
+      ? sb.from('look_item').insert(input.itemProductIds.map((productId, i) => ({ look_id: row.id, product_id: productId, position: i })))
+      : Promise.resolve(),
   ]);
 
   revalidatePath('/admin/looks');
@@ -150,6 +172,11 @@ export async function updateLook(id: string, input: LookInput): Promise<{ ok: bo
   }
 
   await replaceLookStyles(sb, id, input.styles);
+
+  await sb.from('look_item').delete().eq('look_id', id);
+  if (input.itemProductIds.length > 0) {
+    await sb.from('look_item').insert(input.itemProductIds.map((productId, i) => ({ look_id: id, product_id: productId, position: i })));
+  }
 
   revalidatePath('/admin/looks');
   return { ok: true };
