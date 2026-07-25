@@ -29,7 +29,7 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Lala — 룩북 대여',
+  title: 'Lala - Admin',
   description: '하루를 위한 옷, 사지 않고 빌립니다.',
 };
 
