@@ -1,0 +1,265 @@
+'use client';
+
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
+import {
+  createLook, updateLook, deleteLook, getLook,
+  type LookListRow, type LookItemOption, type LookDetail,
+} from '@/lib/look-actions';
+
+const MAX_GALLERY_IMAGES = 6;
+
+interface FormState {
+  title: string;
+  cat: string;
+  description: string;
+  itemProductIds: string[];
+  coverFile: File | null;
+  coverPreview: string | null; // 새로 고른 파일 미리보기 또는 기존 커버 URL
+  existingGallery: { path: string; url: string }[]; // 유지 중인 기존 갤러리
+  newGalleryFiles: File[];
+}
+
+const EMPTY_FORM: FormState = {
+  title: '', cat: '', description: '', itemProductIds: [], coverFile: null, coverPreview: null,
+  existingGallery: [], newGalleryFiles: [],
+};
+
+export default function AdminLooks({ looks, productOptions }: { looks: LookListRow[]; productOptions: LookItemOption[] }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [productQuery, setProductQuery] = useState('');
+
+  useEffect(() => {
+    const sb = supabaseBrowser();
+    const ch = sb
+      .channel('admin-looks')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'look' }, () => router.refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'look_item' }, () => router.refresh())
+      .subscribe();
+    return () => { sb.removeChannel(ch); };
+  }, [router]);
+
+  const totalGalleryCount = form.existingGallery.length + form.newGalleryFiles.length;
+
+  const filteredProducts = useMemo(() => {
+    const q = productQuery.trim().toLowerCase();
+    if (!q) return productOptions;
+    return productOptions.filter((p) => p.name.toLowerCase().includes(q));
+  }, [productOptions, productQuery]);
+
+  function openCreate() {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setFormError(null);
+    setProductQuery('');
+    setDrawerOpen(true);
+  }
+
+  function openEdit(id: string) {
+    setEditingId(id);
+    setFormError(null);
+    setProductQuery('');
+    setDrawerOpen(true);
+    startTransition(async () => {
+      const detail: LookDetail | null = await getLook(id);
+      if (!detail) { setFormError('룩 정보를 불러오지 못했어요.'); return; }
+      setForm({
+        title: detail.title, cat: detail.cat, description: detail.description,
+        itemProductIds: detail.items.map((i) => i.productId),
+        coverFile: null, coverPreview: detail.coverUrl,
+        existingGallery: detail.galleryImages, newGalleryFiles: [],
+      });
+    });
+  }
+
+  function closeDrawer() {
+    if (pending) return;
+    setDrawerOpen(false);
+  }
+
+  function pickCover(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setForm((f) => ({ ...f, coverFile: file, coverPreview: file ? URL.createObjectURL(file) : f.coverPreview }));
+  }
+
+  function pickGallery(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setForm((f) => ({ ...f, newGalleryFiles: [...f.newGalleryFiles, ...files].slice(0, MAX_GALLERY_IMAGES - f.existingGallery.length) }));
+    e.target.value = '';
+  }
+
+  function removeExistingGalleryImage(path: string) {
+    setForm((f) => ({ ...f, existingGallery: f.existingGallery.filter((g) => g.path !== path) }));
+  }
+
+  function removeNewGalleryFile(idx: number) {
+    setForm((f) => ({ ...f, newGalleryFiles: f.newGalleryFiles.filter((_, i) => i !== idx) }));
+  }
+
+  function toggleProduct(productId: string) {
+    setForm((f) => ({
+      ...f,
+      itemProductIds: f.itemProductIds.includes(productId)
+        ? f.itemProductIds.filter((id) => id !== productId)
+        : [...f.itemProductIds, productId],
+    }));
+  }
+
+  function submit() {
+    if (!form.title.trim()) { setFormError('제목을 입력해주세요.'); return; }
+    setFormError(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set('title', form.title);
+      fd.set('cat', form.cat);
+      fd.set('description', form.description);
+      fd.set('itemProductIds', JSON.stringify(form.itemProductIds));
+      if (form.coverFile) fd.set('cover', form.coverFile);
+      for (const f of form.newGalleryFiles) fd.append('gallery', f);
+
+      const result = editingId
+        ? await (async () => { fd.set('keepGalleryPaths', JSON.stringify(form.existingGallery.map((g) => g.path))); return updateLook(editingId, fd); })()
+        : await createLook(fd);
+      if (!result.ok) {
+        setFormError(result.reason ?? '저장에 실패했습니다.');
+        return;
+      }
+      setDrawerOpen(false);
+      router.refresh();
+    });
+  }
+
+  function remove(id: string) {
+    if (!confirm('이 룩을 삭제할까요? 갤러리 이미지도 함께 삭제됩니다.')) return;
+    startTransition(async () => { await deleteLook(id); router.refresh(); });
+  }
+
+  return (
+    <section>
+      <div className="admin-topbar">
+        <h1 className="staff-title">룩북 <span className="rt-dot" title="실시간 연결됨">●</span></h1>
+        <button className="btn-primary" onClick={openCreate}>+ 룩 등록</button>
+      </div>
+
+      {looks.length === 0 ? (
+        <p className="staff-empty">등록된 룩이 없습니다.</p>
+      ) : (
+        <div className="dtable-wrap">
+          <table className="dtable dtable-compact">
+            <thead>
+              <tr><th>커버</th><th>제목</th><th>성격</th><th className="num">구성 상품</th><th></th></tr>
+            </thead>
+            <tbody>
+              {looks.map((l) => (
+                <tr key={l.id}>
+                  <td>
+                    {l.coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={l.coverUrl} alt="" className="order-item-thumb" style={{ objectFit: 'cover' }} />
+                    ) : (
+                      <div className="order-item-thumb" style={{ background: 'linear-gradient(160deg, #6B2737, #3B2230)' }} />
+                    )}
+                  </td>
+                  <td className="prod-name">{l.title}</td>
+                  <td>{l.cat}</td>
+                  <td className="num">{l.itemCount}개</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <button className="btn-primary" style={{ padding: '7px 14px', marginRight: 6 }} onClick={() => openEdit(l.id)}>수정</button>
+                    <button className="btn-ghost" style={{ padding: '7px 14px' }} onClick={() => remove(l.id)}>삭제</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {drawerOpen && (
+        <div className="wd-ov" onClick={(e) => e.target === e.currentTarget && closeDrawer()}>
+          <div className="modal-form-box">
+            <h2>{editingId ? '룩 수정' : '룩 등록'}</h2>
+            <div className="field-group">
+              <label>제목</label>
+              <input className="field" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            </div>
+            <div className="field-group">
+              <label>성격 (예: 이브닝, 데일리, 로맨틱)</label>
+              <input className="field" value={form.cat} onChange={(e) => setForm({ ...form, cat: e.target.value })} />
+            </div>
+            <div className="field-group">
+              <label>설명</label>
+              <textarea
+                className="pf-input pf-edit"
+                style={{ width: '100%', textAlign: 'left', padding: '10px 12px', minHeight: 60, resize: 'vertical' }}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+            </div>
+
+            <div className="field-group">
+              <label>커버 이미지 (목록 카드용)</label>
+              <input type="file" accept="image/*" onChange={pickCover} disabled={pending} />
+              {form.coverPreview && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.coverPreview} alt="" className="order-item-issue-photo" style={{ marginTop: 8 }} />
+              )}
+            </div>
+
+            <div className="field-group">
+              <label>갤러리 이미지 (상세 페이지용, 최대 {MAX_GALLERY_IMAGES}장 — 지금 {totalGalleryCount}장)</label>
+              <input type="file" accept="image/*" multiple onChange={pickGallery} disabled={pending || totalGalleryCount >= MAX_GALLERY_IMAGES} />
+              {(form.existingGallery.length > 0 || form.newGalleryFiles.length > 0) && (
+                <div className="order-item-issue-preview-row">
+                  {form.existingGallery.map((g) => (
+                    <div key={g.path} style={{ position: 'relative' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={g.url} alt="" className="order-item-issue-photo" />
+                      <button type="button" className="cart-x" style={{ position: 'absolute', top: -6, right: -6 }}
+                        onClick={() => removeExistingGalleryImage(g.path)} aria-label="삭제">×</button>
+                    </div>
+                  ))}
+                  {form.newGalleryFiles.map((f, i) => (
+                    <div key={i} style={{ position: 'relative' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={URL.createObjectURL(f)} alt="" className="order-item-issue-photo" />
+                      <button type="button" className="cart-x" style={{ position: 'absolute', top: -6, right: -6 }}
+                        onClick={() => removeNewGalleryFile(i)} aria-label="삭제">×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="field-group">
+              <label>구성 상품 ({form.itemProductIds.length}개 선택됨)</label>
+              <input className="field" placeholder="상품명 검색" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} />
+              <div style={{ maxHeight: 180, overflowY: 'auto', marginTop: 6, border: '1px solid var(--line)', borderRadius: 8, padding: 6 }}>
+                {filteredProducts.map((p) => (
+                  <label key={p.productId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', fontSize: 12.5, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.itemProductIds.includes(p.productId)} onChange={() => toggleProduct(p.productId)} />
+                    {p.name} <span style={{ color: 'var(--muted)' }}>· {p.category} · {p.size}</span>
+                  </label>
+                ))}
+                {filteredProducts.length === 0 && <p className="staff-empty" style={{ padding: 8 }}>검색 결과가 없어요.</p>}
+              </div>
+            </div>
+
+            {formError && <p style={{ fontSize: 12 }}>{formError}</p>}
+
+            <div className="drawer-actions">
+              <button className="btn-ghost" onClick={closeDrawer} disabled={pending}>취소</button>
+              <button className="btn-primary" onClick={submit} disabled={pending}>{pending ? '저장 중…' : '저장'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
