@@ -41,7 +41,7 @@ export async function listLooks(): Promise<LookListRow[]> {
   const { data, error } = await sb
     .from('look')
     .select('id,title,cat,cover_path,look_item(product_id)')
-    .order('position', { ascending: true });
+    .order('created_at', { ascending: false });
   if (error || !data) return [];
   return (data as unknown as { id: string; title: string; cat: string; cover_path: string | null; look_item: { product_id: string }[] }[]).map((r) => ({
     id: r.id, title: r.title, cat: r.cat,
