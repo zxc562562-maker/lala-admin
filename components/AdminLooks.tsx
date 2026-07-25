@@ -197,7 +197,19 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
   }
 
   function setProductEntryId(index: number, productId: string) {
-    setForm((f) => ({ ...f, productPhotos: f.productPhotos.map((p, i) => (i === index ? { ...p, productId } : p)) }));
+    // 상품을 바꾸면 그 상품에 이미 등록된 사진을 그대로 불러온다 — 안 그러면 저장할 때 빈 값으로
+    // 덮어써서 기존 상품 사진이 지워지는 사고가 난다.
+    setForm((f) => ({ ...f, productPhotos: f.productPhotos.map((p, i) => (i === index ? { ...p, productId, thumbnailPath: null, thumbnailPreview: null, gallery: [] } : p)) }));
+    if (!productId) return;
+    startTransition(async () => {
+      const photos = await getProductPhotos(productId);
+      setForm((f) => ({
+        ...f,
+        productPhotos: f.productPhotos.map((p, i) => (i === index && p.productId === productId
+          ? { ...p, thumbnailPath: photos.imagePath, thumbnailPreview: photos.imageUrl, gallery: photos.gallery }
+          : p)),
+      }));
+    });
   }
 
   async function pickProductThumbnail(index: number, e: React.ChangeEvent<HTMLInputElement>) {
