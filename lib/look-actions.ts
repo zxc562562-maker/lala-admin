@@ -93,7 +93,7 @@ export async function listProductOptions(): Promise<LookItemOption[]> {
  */
 export async function createLookImageUploadTicket(
   contentType: string,
-): Promise<{ ok: true; path: string; token: string; signedUrl: string } | { ok: false; reason: string }> {
+): Promise<{ ok: true; path: string; token: string } | { ok: false; reason: string }> {
   const me = await getAccess();
   if (!me?.isApprover) return { ok: false, reason: '권한이 없습니다.' };
 
@@ -104,9 +104,7 @@ export async function createLookImageUploadTicket(
   const sb = supabaseAdmin();
   const { data, error } = await sb.storage.from(LOOK_IMAGE_BUCKET).createSignedUploadUrl(path);
   if (error || !data) return { ok: false, reason: '업로드 준비에 실패했어요.' };
-  // signedUrl은 Supabase가 만들어준 그대로 넘긴다(직접 조합하지 않음 — 내부 URL 형식이 바뀌어도
-  // 여기가 안 깨지게).
-  return { ok: true, path, token: data.token, signedUrl: data.signedUrl };
+  return { ok: true, path, token: data.token };
 }
 
 export interface LookInput {
