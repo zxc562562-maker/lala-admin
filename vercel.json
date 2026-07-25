@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/send-scheduled-marketing",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
