@@ -4,31 +4,32 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import {
-  createLook, updateLook, deleteLook, getLook,
+  createLook, updateLook, deleteLook, getLook, uploadLookImage,
   type LookListRow, type LookItemOption, type LookDetail,
 } from '@/lib/look-actions';
 
 const MAX_GALLERY_IMAGES = 6;
+
+interface GalleryImage { path: string; url: string }
 
 interface FormState {
   title: string;
   cat: string;
   description: string;
   itemProductIds: string[];
-  coverFile: File | null;
-  coverPreview: string | null; // 새로 고른 파일 미리보기 또는 기존 커버 URL
-  existingGallery: { path: string; url: string }[]; // 유지 중인 기존 갤러리
-  newGalleryFiles: File[];
+  coverPath: string | null;
+  coverPreview: string | null;
+  gallery: GalleryImage[];
 }
 
 const EMPTY_FORM: FormState = {
-  title: '', cat: '', description: '', itemProductIds: [], coverFile: null, coverPreview: null,
-  existingGallery: [], newGalleryFiles: [],
+  title: '', cat: '', description: '', itemProductIds: [], coverPath: null, coverPreview: null, gallery: [],
 };
 
 export default function AdminLooks({ looks, productOptions }: { looks: LookListRow[]; productOptions: LookItemOption[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [uploading, setUploading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -45,7 +46,7 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
     return () => { sb.removeChannel(ch); };
   }, [router]);
 
-  const totalGalleryCount = form.existingGallery.length + form.newGalleryFiles.length;
+  const busy = pending || uploading;
 
   const filteredProducts = useMemo(() => {
     const q = productQuery.trim().toLowerCase();
@@ -72,35 +73,54 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
       setForm({
         title: detail.title, cat: detail.cat, description: detail.description,
         itemProductIds: detail.items.map((i) => i.productId),
-        coverFile: null, coverPreview: detail.coverUrl,
-        existingGallery: detail.galleryImages, newGalleryFiles: [],
+        coverPath: detail.coverPath, coverPreview: detail.coverUrl,
+        gallery: detail.galleryImages,
       });
     });
   }
 
   function closeDrawer() {
-    if (pending) return;
+    if (busy) return;
     setDrawerOpen(false);
   }
 
-  function pickCover(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] ?? null;
-    setForm((f) => ({ ...f, coverFile: file, coverPreview: file ? URL.createObjectURL(file) : f.coverPreview }));
-  }
-
-  function pickGallery(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length === 0) return;
-    setForm((f) => ({ ...f, newGalleryFiles: [...f.newGalleryFiles, ...files].slice(0, MAX_GALLERY_IMAGES - f.existingGallery.length) }));
+  async function pickCover(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
     e.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    setFormError(null);
+    const preview = URL.createObjectURL(file);
+    const fd = new FormData();
+    fd.set('file', file);
+    const res = await uploadLookImage(fd);
+    setUploading(false);
+    if (!res.ok) { setFormError(res.reason); return; }
+    setForm((f) => ({ ...f, coverPath: res.path, coverPreview: preview }));
   }
 
-  function removeExistingGalleryImage(path: string) {
-    setForm((f) => ({ ...f, existingGallery: f.existingGallery.filter((g) => g.path !== path) }));
+  async function pickGallery(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    const room = MAX_GALLERY_IMAGES - form.gallery.length;
+    if (room <= 0) return;
+    setUploading(true);
+    setFormError(null);
+    for (const file of files.slice(0, room)) {
+      const preview = URL.createObjectURL(file);
+      const fd = new FormData();
+      fd.set('file', file);
+      // eslint-disable-next-line no-await-in-loop -- 갤러리 순서를 유지해야 해서 순차 업로드
+      const res = await uploadLookImage(fd);
+      if (!res.ok) { setFormError(res.reason); continue; }
+      setForm((f) => ({ ...f, gallery: [...f.gallery, { path: res.path, url: preview }] }));
+    }
+    setUploading(false);
   }
 
-  function removeNewGalleryFile(idx: number) {
-    setForm((f) => ({ ...f, newGalleryFiles: f.newGalleryFiles.filter((_, i) => i !== idx) }));
+  function removeGalleryImage(path: string) {
+    setForm((f) => ({ ...f, gallery: f.gallery.filter((g) => g.path !== path) }));
   }
 
   function toggleProduct(productId: string) {
@@ -115,18 +135,13 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
   function submit() {
     if (!form.title.trim()) { setFormError('제목을 입력해주세요.'); return; }
     setFormError(null);
+    const input = {
+      title: form.title, cat: form.cat, description: form.description,
+      itemProductIds: form.itemProductIds, coverPath: form.coverPath,
+      galleryPaths: form.gallery.map((g) => g.path),
+    };
     startTransition(async () => {
-      const fd = new FormData();
-      fd.set('title', form.title);
-      fd.set('cat', form.cat);
-      fd.set('description', form.description);
-      fd.set('itemProductIds', JSON.stringify(form.itemProductIds));
-      if (form.coverFile) fd.set('cover', form.coverFile);
-      for (const f of form.newGalleryFiles) fd.append('gallery', f);
-
-      const result = editingId
-        ? await (async () => { fd.set('keepGalleryPaths', JSON.stringify(form.existingGallery.map((g) => g.path))); return updateLook(editingId, fd); })()
-        : await createLook(fd);
+      const result = editingId ? await updateLook(editingId, input) : await createLook(input);
       if (!result.ok) {
         setFormError(result.reason ?? '저장에 실패했습니다.');
         return;
@@ -204,8 +219,8 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
             </div>
 
             <div className="field-group">
-              <label>커버 이미지 (목록 카드용)</label>
-              <input type="file" accept="image/*" onChange={pickCover} disabled={pending} />
+              <label>커버 이미지 (목록 카드용, 4MB 이하)</label>
+              <input type="file" accept="image/*" onChange={pickCover} disabled={busy} />
               {form.coverPreview && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={form.coverPreview} alt="" className="order-item-issue-photo" style={{ marginTop: 8 }} />
@@ -213,28 +228,21 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
             </div>
 
             <div className="field-group">
-              <label>갤러리 이미지 (상세 페이지용, 최대 {MAX_GALLERY_IMAGES}장 — 지금 {totalGalleryCount}장)</label>
-              <input type="file" accept="image/*" multiple onChange={pickGallery} disabled={pending || totalGalleryCount >= MAX_GALLERY_IMAGES} />
-              {(form.existingGallery.length > 0 || form.newGalleryFiles.length > 0) && (
+              <label>갤러리 이미지 (상세 페이지용, 최대 {MAX_GALLERY_IMAGES}장, 장당 4MB 이하 — 지금 {form.gallery.length}장)</label>
+              <input type="file" accept="image/*" multiple onChange={pickGallery} disabled={busy || form.gallery.length >= MAX_GALLERY_IMAGES} />
+              {form.gallery.length > 0 && (
                 <div className="order-item-issue-preview-row">
-                  {form.existingGallery.map((g) => (
+                  {form.gallery.map((g) => (
                     <div key={g.path} style={{ position: 'relative' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={g.url} alt="" className="order-item-issue-photo" />
                       <button type="button" className="cart-x" style={{ position: 'absolute', top: -6, right: -6 }}
-                        onClick={() => removeExistingGalleryImage(g.path)} aria-label="삭제">×</button>
-                    </div>
-                  ))}
-                  {form.newGalleryFiles.map((f, i) => (
-                    <div key={i} style={{ position: 'relative' }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={URL.createObjectURL(f)} alt="" className="order-item-issue-photo" />
-                      <button type="button" className="cart-x" style={{ position: 'absolute', top: -6, right: -6 }}
-                        onClick={() => removeNewGalleryFile(i)} aria-label="삭제">×</button>
+                        onClick={() => removeGalleryImage(g.path)} aria-label="삭제">×</button>
                     </div>
                   ))}
                 </div>
               )}
+              {uploading && <p className="hint">업로드 중…</p>}
             </div>
 
             <div className="field-group">
@@ -254,8 +262,8 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
             {formError && <p style={{ fontSize: 12 }}>{formError}</p>}
 
             <div className="drawer-actions">
-              <button className="btn-ghost" onClick={closeDrawer} disabled={pending}>취소</button>
-              <button className="btn-primary" onClick={submit} disabled={pending}>{pending ? '저장 중…' : '저장'}</button>
+              <button className="btn-ghost" onClick={closeDrawer} disabled={busy}>취소</button>
+              <button className="btn-primary" onClick={submit} disabled={busy}>{pending ? '저장 중…' : uploading ? '업로드 중…' : '저장'}</button>
             </div>
           </div>
         </div>
