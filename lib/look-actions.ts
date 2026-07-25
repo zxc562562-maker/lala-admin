@@ -6,11 +6,9 @@ import { getAccess } from '@lala/shared/lib/roles';
 import { getLookImageUrl, LOOK_IMAGE_BUCKET } from '@lala/shared/lib/storage';
 
 const MAX_GALLERY_IMAGES = 6;
-// Vercel 서버 액션 요청 하나는 플랫폼 자체에서 약 4.5MB로 제한된다(next.config의 bodySizeLimit로는
-// 못 늘림). 커버+갤러리 여러 장을 한 요청에 몰아 올리면 그 합이 쉽게 한도를 넘어 요청이 서버에
-// 닿기도 전에 끊겨버려서, 사진은 반드시 한 장씩 개별 요청(uploadLookImage)으로 올리고 이 파일의
-// 나머지 함수들은 이미 올라간 경로(문자열)만 주고받는다 — 그래야 사진 개수와 무관하게 매 요청이 작다.
-const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4MB
+// 이미지는 서버를 거치지 않고 서명 업로드 티켓으로 브라우저에서 Supabase Storage에 바로 올라간다
+// (아래 createLookImageUploadTicket) — 그래서 파일 크기·MIME 제한은 여기서 검사할 수 없고,
+// look-images 버킷 자체의 file_size_limit/allowed_mime_types(db/looks-image-limit.sql)로 강제한다.
 const IMAGE_MIME_EXT: Record<string, string> = {
   'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif',
 };
@@ -87,22 +85,26 @@ export async function listProductOptions(): Promise<LookItemOption[]> {
   }));
 }
 
-/** 이미지 1장을 올린다 — 반드시 이 단위(한 요청 = 파일 1개)로만 호출할 것(위 주석 참고). */
-export async function uploadLookImage(formData: FormData): Promise<{ ok: true; path: string } | { ok: false; reason: string }> {
+/**
+ * 이미지를 서버(Vercel 함수)를 거치지 않고 브라우저에서 Supabase Storage로 바로 올리기 위한
+ * 서명 업로드 티켓 발급. 파일 자체는 안 받고 "이 경로/이 토큰으로 한 번만 업로드해도 좋다"는
+ * 허가만 내준다 — 실제 바이너리는 클라이언트가 signedUrl/token으로 Supabase에 직접 전송한다
+ * (브라우저→서버→Supabase 이중 전송을 브라우저→Supabase 단일 전송으로 줄여 업로드 속도 개선).
+ */
+export async function createLookImageUploadTicket(
+  contentType: string,
+): Promise<{ ok: true; path: string; token: string } | { ok: false; reason: string }> {
   const me = await getAccess();
   if (!me?.isApprover) return { ok: false, reason: '권한이 없습니다.' };
 
-  const file = formData.get('file');
-  if (!(file instanceof File) || file.size === 0) return { ok: false, reason: '파일을 선택해주세요.' };
-  const ext = IMAGE_MIME_EXT[file.type];
+  const ext = IMAGE_MIME_EXT[contentType];
   if (!ext) return { ok: false, reason: '이미지 파일만 업로드할 수 있어요.' };
-  if (file.size > MAX_IMAGE_BYTES) return { ok: false, reason: '파일 크기는 4MB 이하로 올려주세요.' };
 
   const path = `${crypto.randomUUID()}${ext}`;
   const sb = supabaseAdmin();
-  const { error } = await sb.storage.from(LOOK_IMAGE_BUCKET).upload(path, file, { contentType: file.type });
-  if (error) return { ok: false, reason: '이미지 업로드에 실패했어요.' };
-  return { ok: true, path };
+  const { data, error } = await sb.storage.from(LOOK_IMAGE_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) return { ok: false, reason: '업로드 준비에 실패했어요.' };
+  return { ok: true, path, token: data.token };
 }
 
 export interface LookInput {

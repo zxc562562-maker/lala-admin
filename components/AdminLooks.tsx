@@ -4,11 +4,25 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import {
-  createLook, updateLook, deleteLook, getLook, uploadLookImage,
+  createLook, updateLook, deleteLook, getLook, createLookImageUploadTicket,
   type LookListRow, type LookItemOption, type LookDetail,
 } from '@/lib/look-actions';
 
 const MAX_GALLERY_IMAGES = 6;
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const LOOK_IMAGE_BUCKET = 'look-images';
+
+/** 서버에서 서명 업로드 티켓을 받아 브라우저에서 Supabase Storage로 바로 올린다(서버 경유 없음). */
+async function uploadDirect(file: File): Promise<{ ok: true; path: string } | { ok: false; reason: string }> {
+  if (!file.type.startsWith('image/')) return { ok: false, reason: '이미지 파일만 업로드할 수 있어요.' };
+  if (file.size > MAX_IMAGE_BYTES) return { ok: false, reason: '파일 크기는 4MB 이하로 올려주세요.' };
+  const ticket = await createLookImageUploadTicket(file.type);
+  if (!ticket.ok) return ticket;
+  const sb = supabaseBrowser();
+  const { error } = await sb.storage.from(LOOK_IMAGE_BUCKET).uploadToSignedUrl(ticket.path, ticket.token, file);
+  if (error) return { ok: false, reason: '이미지 업로드에 실패했어요.' };
+  return { ok: true, path: ticket.path };
+}
 
 interface GalleryImage { path: string; url: string }
 
@@ -91,9 +105,7 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
     setUploading(true);
     setFormError(null);
     const preview = URL.createObjectURL(file);
-    const fd = new FormData();
-    fd.set('file', file);
-    const res = await uploadLookImage(fd);
+    const res = await uploadDirect(file);
     setUploading(false);
     if (!res.ok) { setFormError(res.reason); return; }
     setForm((f) => ({ ...f, coverPath: res.path, coverPreview: preview }));
@@ -107,14 +119,12 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
     if (room <= 0) return;
     setUploading(true);
     setFormError(null);
-    for (const file of files.slice(0, room)) {
-      const preview = URL.createObjectURL(file);
-      const fd = new FormData();
-      fd.set('file', file);
-      // eslint-disable-next-line no-await-in-loop -- 갤러리 순서를 유지해야 해서 순차 업로드
-      const res = await uploadLookImage(fd);
+    // 브라우저 → Supabase 직접 업로드라 서버 왕복이 없어 병렬로 올려도 안전함
+    const targets = files.slice(0, room);
+    const results = await Promise.all(targets.map(async (file) => ({ file, res: await uploadDirect(file) })));
+    for (const { file, res } of results) {
       if (!res.ok) { setFormError(res.reason); continue; }
-      setForm((f) => ({ ...f, gallery: [...f.gallery, { path: res.path, url: preview }] }));
+      setForm((f) => ({ ...f, gallery: [...f.gallery, { path: res.path, url: URL.createObjectURL(file) }] }));
     }
     setUploading(false);
   }
