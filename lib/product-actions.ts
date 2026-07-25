@@ -12,20 +12,21 @@ const PRODUCT_IMAGE_MIME_EXT: Record<string, string> = {
   'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif',
 };
 
-const PRODUCT_SELECT = 'id,name,brand,category,size,color_name,daily_price,deposit,color_1,color_2,product_style(style)';
+const PRODUCT_SELECT = 'id,name,brand,category,size,color_name,daily_price,deposit,color_1,color_2,image_url,product_style(style)';
 
-/** service 앱과 공유하는 Product 타입엔 없는 색상명(바코드 생성용, 영문)·스타일 태그를 admin 전용으로 얹은 타입. */
-export interface AdminProduct extends Product { colorName: string | null; styles: Style[] }
+/** service 앱과 공유하는 Product 타입엔 없는 색상명(바코드 생성용, 영문)·스타일 태그·썸네일을 admin 전용으로 얹은 타입. */
+export interface AdminProduct extends Product { colorName: string | null; styles: Style[]; imageUrl: string | null }
 
 function mapProduct(r: {
   id: string; name: string; brand: string | null; category: string; size: string; color_name: string | null;
-  daily_price: number; deposit: number; color_1: string | null; color_2: string | null;
+  daily_price: number; deposit: number; color_1: string | null; color_2: string | null; image_url: string | null;
   product_style?: { style: Style }[];
 }): AdminProduct {
   return {
     id: r.id, name: r.name, brand: r.brand ?? '', category: r.category, size: r.size,
     colorName: r.color_name,
     styles: (r.product_style ?? []).map((s) => s.style),
+    imageUrl: getProductImageUrl(r.image_url),
     dailyPrice: r.daily_price, deposit: r.deposit,
     c1: r.color_1 ?? '#3B2230', c2: r.color_2 ?? '#6B2737',
   };

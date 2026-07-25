@@ -5,9 +5,18 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import { STYLE_OPTIONS, type Style } from '@lala/shared/lib/style';
-import { createProduct, updateProduct, type ProductRow, type ProductInput } from '@/lib/product-actions';
+import {
+  createProduct, updateProduct, createProductImageUploadTicket, updateProductPhotos, getProductPhotos,
+  type ProductRow, type ProductInput,
+} from '@/lib/product-actions';
+import { uploadImageDirect } from '@/lib/image-upload-client';
 
 const won = (n: number) => n.toLocaleString('ko-KR') + '원';
+
+const PRODUCT_IMAGE_BUCKET = 'product-images';
+const uploadProductImageDirect = (f: File) => uploadImageDirect(f, PRODUCT_IMAGE_BUCKET, createProductImageUploadTicket);
+
+interface GalleryImage { path: string; url: string }
 
 const EMPTY_FORM: ProductInput = {
   name: '', category: '', size: '', colorName: '', dailyPrice: 0, deposit: 0, c1: '#3B2230', c2: '#6B2737', styles: [],
@@ -22,6 +31,10 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductInput>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [thumbnailPath, setThumbnailPath] = useState<string | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [gallery, setGallery] = useState<GalleryImage[]>([]);
 
   useEffect(() => {
     const sb = supabaseBrowser();
@@ -53,10 +66,15 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
     });
   }, [products, query, category]);
 
+  const busy = pending || uploading;
+
   function openCreate() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setFormError(null);
+    setThumbnailPath(null);
+    setThumbnailPreview(null);
+    setGallery([]);
     setDrawerOpen(true);
   }
 
@@ -64,7 +82,16 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
     setEditingId(p.id);
     setForm({ name: p.name, category: p.category, size: p.size, colorName: p.colorName ?? '', dailyPrice: p.dailyPrice, deposit: p.deposit, c1: p.c1, c2: p.c2, styles: p.styles });
     setFormError(null);
+    setThumbnailPath(null);
+    setThumbnailPreview(p.imageUrl);
+    setGallery([]);
     setDrawerOpen(true);
+    startTransition(async () => {
+      const photos = await getProductPhotos(p.id);
+      setThumbnailPath(photos.imagePath);
+      setThumbnailPreview(photos.imageUrl);
+      setGallery(photos.gallery);
+    });
   }
 
   function toggleStyle(s: Style) {
@@ -72,18 +99,57 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
   }
 
   function closeDrawer() {
-    if (pending) return;
+    if (busy) return;
     setDrawerOpen(false);
+  }
+
+  async function pickThumbnail(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    setFormError(null);
+    const preview = URL.createObjectURL(file);
+    const res = await uploadProductImageDirect(file);
+    setUploading(false);
+    if (!res.ok) { setFormError(res.reason); return; }
+    setThumbnailPath(res.path);
+    setThumbnailPreview(preview);
+  }
+
+  async function pickGallery(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    setUploading(true);
+    setFormError(null);
+    const results = await Promise.all(files.map(async (file) => ({ file, res: await uploadProductImageDirect(file) })));
+    for (const { file, res } of results) {
+      if (!res.ok) { setFormError(res.reason); continue; }
+      setGallery((g) => [...g, { path: res.path, url: URL.createObjectURL(file) }]);
+    }
+    setUploading(false);
+  }
+
+  function removeGalleryImage(path: string) {
+    setGallery((g) => g.filter((img) => img.path !== path));
   }
 
   function submit() {
     if (!form.colorName.trim()) { setFormError('색상명을 입력해주세요(바코드 생성에 필요해요).'); return; }
     setFormError(null);
     startTransition(async () => {
-      const result = editingId ? await updateProduct(editingId, form) : await createProduct(form);
-      if (!result.ok) {
-        setFormError(result.reason ?? '저장에 실패했습니다.');
-        return;
+      let productId: string | undefined = editingId ?? undefined;
+      if (editingId) {
+        const result = await updateProduct(editingId, form);
+        if (!result.ok) { setFormError(result.reason ?? '저장에 실패했습니다.'); return; }
+      } else {
+        const result = await createProduct(form);
+        if (!result.ok) { setFormError(result.reason ?? '저장에 실패했습니다.'); return; }
+        productId = result.id;
+      }
+      if (productId) {
+        await updateProductPhotos({ productId, imagePath: thumbnailPath, galleryPaths: gallery.map((g) => g.path) });
       }
       setDrawerOpen(false);
       router.refresh();
@@ -127,7 +193,12 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
                 <tr key={p.id}>
                   <td>
                     <Link href={`/admin/products/${p.id}`}>
-                      <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${p.c2}, ${p.c1})` }} />
+                      {p.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.imageUrl} alt="" className="order-item-thumb" style={{ objectFit: 'cover' }} />
+                      ) : (
+                        <div className="order-item-thumb" style={{ background: `linear-gradient(160deg, ${p.c2}, ${p.c1})` }} />
+                      )}
                     </Link>
                   </td>
                   <td>{p.category}</td>
@@ -183,6 +254,31 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
                 ))}
               </div>
             </div>
+            <div className="field-group">
+              <label>상품 썸네일</label>
+              <input type="file" accept="image/*" onChange={pickThumbnail} disabled={busy} />
+              {thumbnailPreview && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={thumbnailPreview} alt="" className="order-item-issue-photo" style={{ marginTop: 8 }} />
+              )}
+            </div>
+            <div className="field-group">
+              <label>상품 갤러리</label>
+              <input type="file" accept="image/*" multiple onChange={pickGallery} disabled={busy} />
+              {gallery.length > 0 && (
+                <div className="order-item-issue-preview-row">
+                  {gallery.map((g) => (
+                    <div key={g.path} style={{ position: 'relative' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={g.url} alt="" className="order-item-issue-photo" />
+                      <button type="button" className="cart-x" style={{ position: 'absolute', top: -6, right: -6 }}
+                        onClick={() => removeGalleryImage(g.path)} aria-label="삭제">×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {uploading && <p className="hint">업로드 중…</p>}
+            </div>
             <div className="drawer-row">
               <div className="field-group">
                 <label>일 대여료(원)</label>
@@ -198,8 +294,8 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
             {formError && <p style={{ fontSize: 12 }}>{formError}</p>}
 
             <div className="drawer-actions">
-              <button className="btn-ghost" onClick={closeDrawer} disabled={pending}>취소</button>
-              <button className="btn-primary" onClick={submit} disabled={pending}>{pending ? '저장 중…' : '저장'}</button>
+              <button className="btn-ghost" onClick={closeDrawer} disabled={busy}>취소</button>
+              <button className="btn-primary" onClick={submit} disabled={busy}>{pending ? '저장 중…' : uploading ? '업로드 중…' : '저장'}</button>
             </div>
           </div>
         </div>
