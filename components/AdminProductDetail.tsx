@@ -71,7 +71,7 @@ export default function AdminProductDetail({ product, items }: { product: AdminP
         <div>
           <div className="prod-name">{product.name}</div>
         </div>
-        <div className="prod-brand">{product.category} · {product.size} · {product.colorName || '색상명 미등록'}</div>
+        <div className="prod-brand">{product.category} · {product.size} · {product.colorName || '색상명 미등록'}{product.styles.length > 0 ? ` · ${product.styles.join(', ')}` : ''}</div>
         <div className="admin-spacer" />
         <div className="prod-brand">일 대여료 <b style={{ color: 'var(--espresso)' }}>{won(product.dailyPrice)}</b></div>
         <div className="prod-brand">보증금 <b style={{ color: 'var(--espresso)' }}>{won(product.deposit)}</b></div>

@@ -4,12 +4,13 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
+import { STYLE_OPTIONS, type Style } from '@lala/shared/lib/style';
 import { createProduct, updateProduct, type ProductRow, type ProductInput } from '@/lib/product-actions';
 
 const won = (n: number) => n.toLocaleString('ko-KR') + '원';
 
 const EMPTY_FORM: ProductInput = {
-  name: '', category: '', size: '', colorName: '', dailyPrice: 0, deposit: 0, c1: '#3B2230', c2: '#6B2737',
+  name: '', category: '', size: '', colorName: '', dailyPrice: 0, deposit: 0, c1: '#3B2230', c2: '#6B2737', styles: [],
 };
 
 export default function AdminProducts({ products }: { products: ProductRow[] }) {
@@ -61,9 +62,13 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
 
   function openEdit(p: ProductRow) {
     setEditingId(p.id);
-    setForm({ name: p.name, category: p.category, size: p.size, colorName: p.colorName ?? '', dailyPrice: p.dailyPrice, deposit: p.deposit, c1: p.c1, c2: p.c2 });
+    setForm({ name: p.name, category: p.category, size: p.size, colorName: p.colorName ?? '', dailyPrice: p.dailyPrice, deposit: p.deposit, c1: p.c1, c2: p.c2, styles: p.styles });
     setFormError(null);
     setDrawerOpen(true);
+  }
+
+  function toggleStyle(s: Style) {
+    setForm((f) => ({ ...f, styles: f.styles.includes(s) ? f.styles.filter((x) => x !== s) : [...f.styles, s] }));
   }
 
   function closeDrawer() {
@@ -128,6 +133,7 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
                   <td>{p.category}</td>
                   <td>
                     <Link href={`/admin/products/${p.id}`} className="prod-name" style={{ textDecoration: 'none' }}>{p.name}</Link>
+                    {p.styles.length > 0 && <div className="prod-brand">{p.styles.join(', ')}</div>}
                     {p.barcodes.length > 0 && <div className="prod-brand prod-barcodes">{p.barcodes.join(', ')}</div>}
                   </td>
                   <td>{p.size}</td>
@@ -165,6 +171,17 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
             <div className="field-group">
               <label>색상명 (영문, 바코드용 — 예: BLACK)</label>
               <input className="field" value={form.colorName} onChange={(e) => setForm({ ...form, colorName: e.target.value })} />
+            </div>
+            <div className="field-group">
+              <label>스타일 (여러 개 선택 가능)</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {STYLE_OPTIONS.map((s) => (
+                  <button key={s} type="button" onClick={() => toggleStyle(s)}
+                    className={`size-chip ${form.styles.includes(s) ? 'chosen' : 'pickable'}`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="drawer-row">
               <div className="field-group">

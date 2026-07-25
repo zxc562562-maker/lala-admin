@@ -5,22 +5,33 @@ import { supabaseAdmin } from '@lala/shared/lib/supabase/server';
 import { getAccess } from '@lala/shared/lib/roles';
 import { canTransition, type ItemStatus } from '@lala/shared/lib/domain/inventory';
 import type { Product } from '@lala/shared/lib/types';
+import { STYLE_OPTIONS, type Style } from '@lala/shared/lib/style';
 
-const PRODUCT_SELECT = 'id,name,brand,category,size,color_name,daily_price,deposit,color_1,color_2';
+const PRODUCT_SELECT = 'id,name,brand,category,size,color_name,daily_price,deposit,color_1,color_2,product_style(style)';
 
-/** service 앱과 공유하는 Product 타입엔 없는 색상명(바코드 생성용, 영문)을 admin 전용으로 얹은 타입. */
-export interface AdminProduct extends Product { colorName: string | null }
+/** service 앱과 공유하는 Product 타입엔 없는 색상명(바코드 생성용, 영문)·스타일 태그를 admin 전용으로 얹은 타입. */
+export interface AdminProduct extends Product { colorName: string | null; styles: Style[] }
 
 function mapProduct(r: {
   id: string; name: string; brand: string | null; category: string; size: string; color_name: string | null;
   daily_price: number; deposit: number; color_1: string | null; color_2: string | null;
+  product_style?: { style: Style }[];
 }): AdminProduct {
   return {
     id: r.id, name: r.name, brand: r.brand ?? '', category: r.category, size: r.size,
     colorName: r.color_name,
+    styles: (r.product_style ?? []).map((s) => s.style),
     dailyPrice: r.daily_price, deposit: r.deposit,
     c1: r.color_1 ?? '#3B2230', c2: r.color_2 ?? '#6B2737',
   };
+}
+
+/** 상품의 스타일 태그를 통째로 교체(현재 목록 삭제 후 선택된 것만 다시 삽입) */
+async function replaceProductStyles(sb: ReturnType<typeof supabaseAdmin>, productId: string, styles: Style[]): Promise<void> {
+  await sb.from('product_style').delete().eq('product_id', productId);
+  const valid = styles.filter((s) => (STYLE_OPTIONS as readonly string[]).includes(s));
+  if (valid.length === 0) return;
+  await sb.from('product_style').insert(valid.map((style) => ({ product_id: productId, style })));
 }
 
 export interface AdminInventoryItem {
@@ -131,6 +142,7 @@ async function insertAutoBarcodeItem(
 // ASCII만 인코딩 가능하므로 영문/숫자로 입력받는다. 등록 즉시 바코드가 나와야 하니 필수값.
 export interface ProductInput {
   name: string; category: string; size: string; colorName: string; dailyPrice: number; deposit: number; c1: string; c2: string;
+  styles: Style[];
 }
 
 export async function createProduct(input: ProductInput): Promise<{ ok: boolean; reason?: string; id?: string }> {
@@ -148,6 +160,7 @@ export async function createProduct(input: ProductInput): Promise<{ ok: boolean;
 
   // 등록 직후 바코드가 공란으로 보이면 혼란스럽다는 피드백 반영 — 첫 재고 개체를 바로 만들어준다.
   await insertAutoBarcodeItem(sb, data.id, input.category, colorName, input.size, 1);
+  await replaceProductStyles(sb, data.id, input.styles);
 
   revalidatePath('/admin/products');
   return { ok: true, id: data.id };
@@ -165,6 +178,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<{ 
     daily_price: input.dailyPrice, deposit: input.deposit, color_1: input.c1, color_2: input.c2,
   }).eq('id', id);
   if (error) return { ok: false, reason: '저장에 실패했어요.' };
+  await replaceProductStyles(sb, id, input.styles);
 
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${id}`);
