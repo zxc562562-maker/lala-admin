@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
+import { STYLE_OPTIONS, type Style } from '@lala/shared/lib/style';
 import {
   createLook, updateLook, deleteLook, getLook, createLookImageUploadTicket,
-  type LookListRow, type LookItemOption, type LookDetail,
+  type LookListRow, type LookDetail,
 } from '@/lib/look-actions';
 
-const MAX_GALLERY_IMAGES = 6;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const LOOK_IMAGE_BUCKET = 'look-images';
 // service 앱에서 룩북 이미지가 전부 같은 비율로 깔끔하게 정렬되도록, 화면에 실제로 쓰이는
@@ -67,20 +67,17 @@ async function uploadDirect(rawFile: File): Promise<{ ok: true; path: string } |
 interface GalleryImage { path: string; url: string }
 
 interface FormState {
-  title: string;
-  cat: string;
-  description: string;
-  itemProductIds: string[];
+  styles: Style[];
   coverPath: string | null;
   coverPreview: string | null;
   gallery: GalleryImage[];
 }
 
 const EMPTY_FORM: FormState = {
-  title: '', cat: '', description: '', itemProductIds: [], coverPath: null, coverPreview: null, gallery: [],
+  styles: [], coverPath: null, coverPreview: null, gallery: [],
 };
 
-export default function AdminLooks({ looks, productOptions }: { looks: LookListRow[]; productOptions: LookItemOption[] }) {
+export default function AdminLooks({ looks }: { looks: LookListRow[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
@@ -88,45 +85,35 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
-  const [productQuery, setProductQuery] = useState('');
 
   useEffect(() => {
     const sb = supabaseBrowser();
     const ch = sb
       .channel('admin-looks')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'look' }, () => router.refresh())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'look_item' }, () => router.refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'look_style' }, () => router.refresh())
       .subscribe();
     return () => { sb.removeChannel(ch); };
   }, [router]);
 
   const busy = pending || uploading;
 
-  const filteredProducts = useMemo(() => {
-    const q = productQuery.trim().toLowerCase();
-    if (!q) return productOptions;
-    return productOptions.filter((p) => p.name.toLowerCase().includes(q));
-  }, [productOptions, productQuery]);
-
   function openCreate() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setFormError(null);
-    setProductQuery('');
     setDrawerOpen(true);
   }
 
   function openEdit(id: string) {
     setEditingId(id);
     setFormError(null);
-    setProductQuery('');
     setDrawerOpen(true);
     startTransition(async () => {
       const detail: LookDetail | null = await getLook(id);
-      if (!detail) { setFormError('룩 정보를 불러오지 못했어요.'); return; }
+      if (!detail) { setFormError('룩북 정보를 불러오지 못했어요.'); return; }
       setForm({
-        title: detail.title, cat: detail.cat, description: detail.description,
-        itemProductIds: detail.items.map((i) => i.productId),
+        styles: detail.styles,
         coverPath: detail.coverPath, coverPreview: detail.coverUrl,
         gallery: detail.galleryImages,
       });
@@ -155,13 +142,10 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
     if (files.length === 0) return;
-    const room = MAX_GALLERY_IMAGES - form.gallery.length;
-    if (room <= 0) return;
     setUploading(true);
     setFormError(null);
     // 브라우저 → Supabase 직접 업로드라 서버 왕복이 없어 병렬로 올려도 안전함
-    const targets = files.slice(0, room);
-    const results = await Promise.all(targets.map(async (file) => ({ file, res: await uploadDirect(file) })));
+    const results = await Promise.all(files.map(async (file) => ({ file, res: await uploadDirect(file) })));
     for (const { file, res } of results) {
       if (!res.ok) { setFormError(res.reason); continue; }
       setForm((f) => ({ ...f, gallery: [...f.gallery, { path: res.path, url: URL.createObjectURL(file) }] }));
@@ -173,23 +157,13 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
     setForm((f) => ({ ...f, gallery: f.gallery.filter((g) => g.path !== path) }));
   }
 
-  function toggleProduct(productId: string) {
-    setForm((f) => ({
-      ...f,
-      itemProductIds: f.itemProductIds.includes(productId)
-        ? f.itemProductIds.filter((id) => id !== productId)
-        : [...f.itemProductIds, productId],
-    }));
+  function toggleStyle(s: Style) {
+    setForm((f) => ({ ...f, styles: f.styles.includes(s) ? f.styles.filter((x) => x !== s) : [...f.styles, s] }));
   }
 
   function submit() {
-    if (!form.title.trim()) { setFormError('제목을 입력해주세요.'); return; }
     setFormError(null);
-    const input = {
-      title: form.title, cat: form.cat, description: form.description,
-      itemProductIds: form.itemProductIds, coverPath: form.coverPath,
-      galleryPaths: form.gallery.map((g) => g.path),
-    };
+    const input = { styles: form.styles, coverPath: form.coverPath, galleryPaths: form.gallery.map((g) => g.path) };
     startTransition(async () => {
       const result = editingId ? await updateLook(editingId, input) : await createLook(input);
       if (!result.ok) {
@@ -202,7 +176,7 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
   }
 
   function remove(id: string) {
-    if (!confirm('이 룩을 삭제할까요? 갤러리 이미지도 함께 삭제됩니다.')) return;
+    if (!confirm('이 룩북을 삭제할까요? 갤러리 이미지도 함께 삭제됩니다.')) return;
     startTransition(async () => { await deleteLook(id); router.refresh(); });
   }
 
@@ -210,16 +184,16 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
     <section>
       <div className="admin-topbar">
         <h1 className="staff-title">룩북 <span className="rt-dot" title="실시간 연결됨">●</span></h1>
-        <button className="btn-primary" onClick={openCreate}>+ 룩 등록</button>
+        <button className="btn-primary" onClick={openCreate}>+ 룩북 등록</button>
       </div>
 
       {looks.length === 0 ? (
-        <p className="staff-empty">등록된 룩이 없습니다.</p>
+        <p className="staff-empty">등록된 룩북이 없습니다.</p>
       ) : (
         <div className="dtable-wrap">
           <table className="dtable dtable-compact">
             <thead>
-              <tr><th>커버</th><th>제목</th><th>성격</th><th className="num">구성 상품</th><th></th></tr>
+              <tr><th>커버</th><th>스타일</th><th></th></tr>
             </thead>
             <tbody>
               {looks.map((l) => (
@@ -232,9 +206,7 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
                       <div className="order-item-thumb" style={{ background: 'linear-gradient(160deg, #6B2737, #3B2230)' }} />
                     )}
                   </td>
-                  <td className="prod-name">{l.title}</td>
-                  <td>{l.cat}</td>
-                  <td className="num">{l.itemCount}개</td>
+                  <td>{l.styles.join(', ') || '—'}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <button className="btn-primary" style={{ padding: '7px 14px', marginRight: 6 }} onClick={() => openEdit(l.id)}>수정</button>
                     <button className="btn-ghost" style={{ padding: '7px 14px' }} onClick={() => remove(l.id)}>삭제</button>
@@ -249,27 +221,22 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
       {drawerOpen && (
         <div className="wd-ov" onClick={(e) => e.target === e.currentTarget && closeDrawer()}>
           <div className="modal-form-box">
-            <h2>{editingId ? '룩 수정' : '룩 등록'}</h2>
+            <h2>{editingId ? '룩북 수정' : '룩북 등록'}</h2>
+
             <div className="field-group">
-              <label>제목</label>
-              <input className="field" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-            </div>
-            <div className="field-group">
-              <label>성격 (예: 이브닝, 데일리, 로맨틱)</label>
-              <input className="field" value={form.cat} onChange={(e) => setForm({ ...form, cat: e.target.value })} />
-            </div>
-            <div className="field-group">
-              <label>설명</label>
-              <textarea
-                className="pf-input pf-edit"
-                style={{ width: '100%', textAlign: 'left', padding: '10px 12px', minHeight: 60, resize: 'vertical' }}
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
+              <label>스타일</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {STYLE_OPTIONS.map((s) => (
+                  <button key={s} type="button" onClick={() => toggleStyle(s)}
+                    className={`size-chip ${form.styles.includes(s) ? 'chosen' : 'pickable'}`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="field-group">
-              <label>커버 이미지 (목록 카드용, 4:5 비율로 자동 크롭, 10MB 이하)</label>
+              <label>룩북 썸네일</label>
               <input type="file" accept="image/*" onChange={pickCover} disabled={busy} />
               {form.coverPreview && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -278,8 +245,8 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
             </div>
 
             <div className="field-group">
-              <label>갤러리 이미지 (상세 페이지용, 4:5 비율로 자동 크롭, 최대 {MAX_GALLERY_IMAGES}장, 장당 10MB 이하 — 지금 {form.gallery.length}장)</label>
-              <input type="file" accept="image/*" multiple onChange={pickGallery} disabled={busy || form.gallery.length >= MAX_GALLERY_IMAGES} />
+              <label>갤러리 이미지</label>
+              <input type="file" accept="image/*" multiple onChange={pickGallery} disabled={busy} />
               {form.gallery.length > 0 && (
                 <div className="order-item-issue-preview-row">
                   {form.gallery.map((g) => (
@@ -293,20 +260,6 @@ export default function AdminLooks({ looks, productOptions }: { looks: LookListR
                 </div>
               )}
               {uploading && <p className="hint">업로드 중…</p>}
-            </div>
-
-            <div className="field-group">
-              <label>구성 상품 ({form.itemProductIds.length}개 선택됨)</label>
-              <input className="field" placeholder="상품명 검색" value={productQuery} onChange={(e) => setProductQuery(e.target.value)} />
-              <div style={{ maxHeight: 180, overflowY: 'auto', marginTop: 6, border: '1px solid var(--line)', borderRadius: 8, padding: 6 }}>
-                {filteredProducts.map((p) => (
-                  <label key={p.productId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', fontSize: 12.5, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={form.itemProductIds.includes(p.productId)} onChange={() => toggleProduct(p.productId)} />
-                    {p.name} <span style={{ color: 'var(--muted)' }}>· {p.category} · {p.size}</span>
-                  </label>
-                ))}
-                {filteredProducts.length === 0 && <p className="staff-empty" style={{ padding: 8 }}>검색 결과가 없어요.</p>}
-              </div>
             </div>
 
             {formError && <p style={{ fontSize: 12 }}>{formError}</p>}
