@@ -11,10 +11,38 @@ import {
 const MAX_GALLERY_IMAGES = 6;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const LOOK_IMAGE_BUCKET = 'look-images';
+const RESIZE_MAX_DIMENSION = 1600; // 카탈로그 화면용이라 원본 해상도가 필요 없음
+const RESIZE_QUALITY = 0.82;
 
-/** 서버에서 서명 업로드 티켓을 받아 브라우저에서 Supabase Storage로 바로 올린다(서버 경유 없음). */
-async function uploadDirect(file: File): Promise<{ ok: true; path: string } | { ok: false; reason: string }> {
-  if (!file.type.startsWith('image/')) return { ok: false, reason: '이미지 파일만 업로드할 수 있어요.' };
+/**
+ * 휴대폰 원본 사진(3~8MB대)을 그대로 올리면 사용자 업로드 대역폭에 그대로 발목잡혀 느리다 —
+ * 화면에 실제로 필요한 크기(최대 1600px)로 줄이고 JPEG로 압축해서 보통 수백 KB로 만든다.
+ * 리사이즈에 실패하면(예: 지원 안 되는 형식) 원본을 그대로 쓴다.
+ */
+async function resizeForUpload(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, RESIZE_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', RESIZE_QUALITY));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+}
+
+/** 리사이즈 후 서버에서 서명 업로드 티켓을 받아 브라우저에서 Supabase Storage로 바로 올린다(서버 경유 없음). */
+async function uploadDirect(rawFile: File): Promise<{ ok: true; path: string } | { ok: false; reason: string }> {
+  if (!rawFile.type.startsWith('image/')) return { ok: false, reason: '이미지 파일만 업로드할 수 있어요.' };
+  const file = await resizeForUpload(rawFile);
   if (file.size > MAX_IMAGE_BYTES) return { ok: false, reason: '파일 크기는 4MB 이하로 올려주세요.' };
   const ticket = await createLookImageUploadTicket(file.type);
   if (!ticket.ok) return ticket;
