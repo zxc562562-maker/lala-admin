@@ -63,8 +63,8 @@ function barcodeUpToSize(barcode: string): string {
   return barcode.replace(/-\d{2}$/, '');
 }
 
-/** 주문 카드 알약은 공간이 좁아 "직배송/퀵배송" 대신 "직/퀵"으로 줄여 표기(택배는 그대로). */
-const METHOD_SHORT_LABEL: Record<string, string> = { DIRECT: '직', QUICK: '퀵', PARCEL: '택배' };
+/** 주문 카드 알약은 공간이 좁아 "직배송/퀵배송" 대신 "직/퀵"으로 줄여 표기(택배·픽업은 그대로). */
+const METHOD_SHORT_LABEL: Record<string, string> = { DIRECT: '직', QUICK: '퀵', PARCEL: '택배', PICKUP: '픽업' };
 
 /** 미지정(null)이면 알약 자체를 안 보여줄 거라 null 리턴. */
 function deliveryMethodLabel(id: string | null): string | null {
