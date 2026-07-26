@@ -191,6 +191,32 @@ export async function updateProduct(id: string, input: ProductInput): Promise<{ 
   return { ok: true };
 }
 
+/**
+ * 재고 개체(inventory_item)가 하나라도 있으면 삭제를 막는다 — product 삭제는 on delete cascade로
+ * 재고 개체·대여 이력까지 통째로 날아가서, 실물이 등록돼 있는 상품을 실수로 지우는 사고를 막기 위함.
+ */
+export async function deleteProduct(id: string): Promise<{ ok: boolean; reason?: string }> {
+  const me = await getAccess();
+  if (!me?.isApprover) return { ok: false, reason: '권한이 없습니다.' };
+
+  const sb = supabaseAdmin();
+  const { count } = await sb.from('inventory_item').select('id', { count: 'exact', head: true }).eq('product_id', id);
+  if ((count ?? 0) > 0) {
+    return { ok: false, reason: '재고 개체가 등록된 상품은 삭제할 수 없어요. 재고관리에서 먼저 정리해주세요.' };
+  }
+
+  const { data: product } = await sb.from('product').select('image_url').eq('id', id).maybeSingle();
+  const { data: images } = await sb.from('product_image').select('path').eq('product_id', id);
+  const paths = [...(images ?? []).map((i: { path: string }) => i.path), ...(product?.image_url ? [product.image_url] : [])];
+  if (paths.length > 0) await sb.storage.from(PRODUCT_IMAGE_BUCKET).remove(paths);
+
+  const { error } = await sb.from('product').delete().eq('id', id);
+  if (error) return { ok: false, reason: '삭제에 실패했어요.' };
+
+  revalidatePath('/admin/products');
+  return { ok: true };
+}
+
 const ITEM_SELECT = 'id,product_id,barcode,status,condition,rental_count';
 
 export async function listInventoryItemsForProduct(productId: string): Promise<AdminInventoryItem[]> {

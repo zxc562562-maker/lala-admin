@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { supabaseBrowser } from '@lala/shared/lib/supabase/client';
 import { STYLE_OPTIONS, type Style } from '@lala/shared/lib/style';
 import {
-  createProduct, updateProduct, createProductImageUploadTicket, updateProductPhotos, getProductPhotos,
+  createProduct, updateProduct, deleteProduct, createProductImageUploadTicket, updateProductPhotos, getProductPhotos,
   type ProductRow, type ProductInput,
 } from '@/lib/product-actions';
 import { uploadImageDirect } from '@/lib/image-upload-client';
@@ -156,6 +156,15 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
     });
   }
 
+  function remove(p: ProductRow) {
+    if (!confirm(`"${p.name}" 상품을 삭제할까요?`)) return;
+    startTransition(async () => {
+      const result = await deleteProduct(p.id);
+      if (!result.ok) { alert(result.reason ?? '삭제에 실패했습니다.'); return; }
+      router.refresh();
+    });
+  }
+
   return (
     <section>
       <div className="admin-topbar">
@@ -212,7 +221,8 @@ export default function AdminProducts({ products }: { products: ProductRow[] }) 
                   <td className="num">{won(p.deposit)}</td>
                   <td className="num">{p.itemCount}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
-                    <button className="btn-primary" style={{ padding: '7px 14px' }} onClick={() => openEdit(p)}>수정</button>
+                    <button className="btn-primary" style={{ padding: '7px 14px', marginRight: 6 }} onClick={() => openEdit(p)}>수정</button>
+                    <button className="btn-ghost" style={{ padding: '7px 14px' }} onClick={() => remove(p)}>삭제</button>
                   </td>
                 </tr>
               ))}
